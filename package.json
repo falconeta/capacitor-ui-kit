@@ -1,5 +1,5 @@
 {
-  "name": "capacitor-ui-kit",
+  "name": "@falconeta/capacitor-ui-kit",
   "version": "0.0.1",
   "description": "plugin that opens the gate to using iOS UIKit in the Capacitor ecosystem",
   "main": "dist/plugin.cjs.js",
@@ -11,7 +11,7 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CapacitorUiKit.podspec"
+    "FalconetaCapacitorUiKit.podspec"
   ],
   "author": "",
   "license": "MIT",
@@ -38,6 +38,7 @@
     "swiftlint": "node-swiftlint",
     "docgen": "docgen --api CapacitorUIKitPlugin --output-readme README.md --output-json dist/docs.json",
     "build": "npm run clean && npm run docgen && tsc && rollup -c rollup.config.mjs",
+    "build:no-clean": "npm run docgen && tsc && rollup -c rollup.config.mjs",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",
     "prepublishOnly": "npm run build"

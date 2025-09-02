@@ -1,10 +1,16 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { CapacitorUIKitPlugin } from './definitions';
+import type { CapacitorUIKitPlugin, CreateTabBar } from './definitions';
 
 export class CapacitorUIKitWeb extends WebPlugin implements CapacitorUIKitPlugin {
-  async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log('ECHO', options);
-    return options;
+  showTabBar(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  hideTabBar(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  createTabBar(options: CreateTabBar): Promise<void> {
+    console.log('createTabBar', options);
+    throw new Error('Method not implemented.');
   }
 }
