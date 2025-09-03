@@ -16,6 +16,8 @@ npx cap sync
 * [`createTabBar(...)`](#createtabbar)
 * [`showTabBar()`](#showtabbar)
 * [`hideTabBar()`](#hidetabbar)
+* [`showSearch()`](#showsearch)
+* [`hideSearch()`](#hidesearch)
 * [Interfaces](#interfaces)
 
 </docgen-index>
@@ -54,15 +56,34 @@ hideTabBar() => Promise<void>
 --------------------
 
 
+### showSearch()
+
+```typescript
+showSearch() => Promise<void>
+```
+
+--------------------
+
+
+### hideSearch()
+
+```typescript
+hideSearch() => Promise<void>
+```
+
+--------------------
+
+
 ### Interfaces
 
 
 #### CreateTabBar
 
-| Prop          | Type                                                    |
-| ------------- | ------------------------------------------------------- |
-| **`items`**   | <code>TabBarItem[]</code>                               |
-| **`options`** | <code><a href="#tabbaroptions">TabBarOptions</a></code> |
+| Prop                | Type                                                    |
+| ------------------- | ------------------------------------------------------- |
+| **`items`**         | <code>TabBarItem[]</code>                               |
+| **`options`**       | <code><a href="#tabbaroptions">TabBarOptions</a></code> |
+| **`searchBarItem`** | <code><a href="#searchbaritem">SearchBarItem</a></code> |
 
 
 #### TabBarItem
@@ -77,15 +98,26 @@ hideTabBar() => Promise<void>
 
 #### TabBarOptions
 
-| Prop                          | Type                |
-| ----------------------------- | ------------------- |
-| **`selectedTag`**             | <code>number</code> |
-| **`tintColor`**               | <code>string</code> |
-| **`fontColor`**               | <code>string</code> |
-| **`fontSize`**                | <code>number</code> |
-| **`unselectedFontSize`**      | <code>number</code> |
-| **`unselectedFontColor`**     | <code>string</code> |
-| **`unselectedItemTintColor`** | <code>string</code> |
-| **`imageBasePath`**           | <code>string</code> |
+| Prop                              | Type                |
+| --------------------------------- | ------------------- |
+| **`selectedTag`**                 | <code>number</code> |
+| **`fontSize`**                    | <code>number</code> |
+| **`unselectedFontSize`**          | <code>number</code> |
+| **`tintColor`**                   | <code>string</code> |
+| **`fontColor`**                   | <code>string</code> |
+| **`unselectedFontColor`**         | <code>string</code> |
+| **`unselectedItemTintColor`**     | <code>string</code> |
+| **`fontColorDark`**               | <code>string</code> |
+| **`unselectedFontColorDark`**     | <code>string</code> |
+| **`tintColorDark`**               | <code>string</code> |
+| **`unselectedItemTintColorDark`** | <code>string</code> |
+| **`imageBasePath`**               | <code>string</code> |
+
+
+#### SearchBarItem
+
+| Prop              | Type                |
+| ----------------- | ------------------- |
+| **`placeholder`** | <code>string</code> |
 
 </docgen-api>
