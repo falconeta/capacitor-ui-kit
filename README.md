@@ -14,11 +14,16 @@ npx cap sync
 <docgen-index>
 
 * [`createTabBar(...)`](#createtabbar)
+* [`createToolbar(...)`](#createtoolbar)
+* [`setToolbarItems(...)`](#settoolbaritems)
 * [`showTabBar()`](#showtabbar)
 * [`hideTabBar()`](#hidetabbar)
 * [`showSearch()`](#showsearch)
 * [`hideSearch()`](#hidesearch)
+* [`showToolbar()`](#showtoolbar)
+* [`hideToolbar()`](#hidetoolbar)
 * [Interfaces](#interfaces)
+* [Enums](#enums)
 
 </docgen-index>
 
@@ -34,6 +39,32 @@ createTabBar(options: CreateTabBar) => Promise<void>
 | Param         | Type                                                  |
 | ------------- | ----------------------------------------------------- |
 | **`options`** | <code><a href="#createtabbar">CreateTabBar</a></code> |
+
+--------------------
+
+
+### createToolbar(...)
+
+```typescript
+createToolbar(options: CreateOrSetToolbar) => Promise<void>
+```
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#createorsettoolbar">CreateOrSetToolbar</a></code> |
+
+--------------------
+
+
+### setToolbarItems(...)
+
+```typescript
+setToolbarItems(options: CreateOrSetToolbar) => Promise<void>
+```
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#createorsettoolbar">CreateOrSetToolbar</a></code> |
 
 --------------------
 
@@ -69,6 +100,24 @@ showSearch() => Promise<void>
 
 ```typescript
 hideSearch() => Promise<void>
+```
+
+--------------------
+
+
+### showToolbar()
+
+```typescript
+showToolbar() => Promise<void>
+```
+
+--------------------
+
+
+### hideToolbar()
+
+```typescript
+hideToolbar() => Promise<void>
 ```
 
 --------------------
@@ -119,5 +168,91 @@ hideSearch() => Promise<void>
 | Prop              | Type                |
 | ----------------- | ------------------- |
 | **`placeholder`** | <code>string</code> |
+
+
+#### CreateOrSetToolbar
+
+| Prop          | Type                                                                                                        |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| **`items`**   | <code><a href="#toolbaritem">ToolbarItem</a>&lt;<a href="#toolbaritemtype">ToolbarItemType</a>&gt;[]</code> |
+| **`options`** | <code><a href="#toolbaroptions">ToolbarOptions</a></code>                                                   |
+
+
+#### ToolbarItem
+
+| Prop       | Type                            |
+| ---------- | ------------------------------- |
+| **`type`** | <code>T</code>                  |
+| **`data`** | <code>ToolbarItemData[T]</code> |
+
+
+#### ToolbarItemData
+
+| Prop                                  | Type                                                                                                                                                                                        |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`[ToolbarItemType.Button]`**        | <code>{ tag: number; image?: string; title?: string; style?: <a href="#toolbarbuttonitemstyle">ToolbarButtonItemStyle</a>; tintColor?: string; }</code>                                     |
+| **`[ToolbarItemType.FlexibleSpace]`** | <code>void</code>                                                                                                                                                                           |
+| **`[ToolbarItemType.Menu]`**          | <code>{ image?: string; title?: string; menuTitle?: string; items: <a href="#toolbarmenuitem">ToolbarMenuItem</a>&lt;<a href="#toolbarmenuitemtype">ToolbarMenuItemType</a>&gt;[]; }</code> |
+
+
+#### ToolbarMenuItem
+
+| Prop       | Type                                |
+| ---------- | ----------------------------------- |
+| **`type`** | <code>T</code>                      |
+| **`data`** | <code>ToolbarMenuItemData[T]</code> |
+
+
+#### ToolbarMenuItemData
+
+| Prop                                  | Type                                                                                                           |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **`[ToolbarMenuItemType.Action]`**    | <code>{ identifier: string; attributes?: ToolbarMenuItemAttributes[]; title?: string; image?: string; }</code> |
+| **`[ToolbarMenuItemType.Separator]`** | <code>void</code>                                                                                              |
+
+
+#### ToolbarOptions
+
+| Prop                | Type                |
+| ------------------- | ------------------- |
+| **`imageBasePath`** | <code>string</code> |
+
+
+### Enums
+
+
+#### ToolbarButtonItemStyle
+
+| Members         | Value          |
+| --------------- | -------------- |
+| **`Plain`**     | <code>0</code> |
+| **`Prominent`** |                |
+
+
+#### ToolbarMenuItemAttributes
+
+| Members                  | Value          |
+| ------------------------ | -------------- |
+| **`KeepsMenuPresented`** | <code>0</code> |
+| **`Destructive`**        |                |
+| **`Disabled`**           |                |
+| **`Hidden`**             |                |
+
+
+#### ToolbarMenuItemType
+
+| Members         | Value          |
+| --------------- | -------------- |
+| **`Action`**    | <code>0</code> |
+| **`Separator`** |                |
+
+
+#### ToolbarItemType
+
+| Members             | Value          |
+| ------------------- | -------------- |
+| **`Button`**        | <code>0</code> |
+| **`FlexibleSpace`** |                |
+| **`Menu`**          |                |
 
 </docgen-api>

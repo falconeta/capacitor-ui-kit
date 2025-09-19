@@ -38,6 +38,14 @@ class PassthroughView: UIView {
                 return hit
             }
         }
+        // 5) Vista del UIToolbar
+        if let resultsView: UIToolbar = findSubview(ofType: UIToolbar.self, in: self) {
+            let p = resultsView.convert(point, from: self)
+            if let hit = resultsView.hitTest(p, with: event) {
+                return hit
+            }
+        }
+        
         
         // Tutto il resto → passa al webView
         return nil
@@ -55,11 +63,12 @@ class PassthroughView: UIView {
     }
 }
 
-@available(iOS 18.4, *)
+@available(iOS 26, *)
 class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
     
     var pluginDelegate: CapacitorUIKitPlugin?
     var search: UISearchTab?
+    private var toolbar: UIToolbar?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -97,6 +106,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         // Append search tab by default
         if let search = search {
             self.tabs.append(search)
+            search.automaticallyActivatesSearch = true
         }
         
         // Extract options
@@ -154,7 +164,6 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         tabBar.scrollEdgeAppearance = appearance
     }
     
-    /// Called when a tab is selected (UITab API, iOS 18+)
     func tabBarController(_ tabBarController: UITabBarController,
                           didSelectTab selectedTab: UITab,
                           previousTab: UITab?) {
@@ -177,6 +186,41 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         }
     }
     
+    func createToolbar(_ items: JSArray, options: JSObject) throws {
+        
+        if(toolbar != nil) {
+            return
+        }
+        
+        let tb = UIToolbar()
+        try tb.setItems(createToolbarItems(from: items, options: options), animated: false)
+
+        
+        self.toolbar = tb
+        
+        tb.translatesAutoresizingMaskIntoConstraints = false
+        
+        let buttonStyle = UIBarButtonItemAppearance()
+        buttonStyle.configureWithDefault(for: .plain)
+        
+        
+        
+        tb.standardAppearance.prominentButtonAppearance = buttonStyle
+        tb.scrollEdgeAppearance?.prominentButtonAppearance = buttonStyle
+        
+        self.view.addSubview(tb)
+        
+        NSLayoutConstraint.activate([
+            tb.leadingAnchor.constraint(equalTo: tabBar.leadingAnchor, constant: 16), // align right with tabBar
+            tb.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor, constant: -16), // align right with tabBar
+            tb.bottomAnchor.constraint(equalTo: tabBar.topAnchor, constant: -16) // 16pt padding
+        ])
+    }
+    
+    func setToolItems(_ items: JSArray, options: JSObject) throws {
+        try toolbar?.setItems(createToolbarItems(from: items, options: options), animated: true)
+    }
+    
     /// Show the search tab dynamically
     func showSearch() {
         if let search = search, !self.tabs.contains(where: { $0 is UISearchTab }) {
@@ -184,9 +228,17 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         }
     }
     
+    func showToolbar() {
+        toolbar?.isHidden = false
+    }
+    
     /// Hide the search tab dynamically
     func hideSearch() {
         self.tabs.removeAll { $0 is UISearchTab }
+    }
+    
+    func hideToolbar() {
+        toolbar?.isHidden = true
     }
     
     /// Show tab bar
@@ -203,9 +255,141 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
     func destroy() {
         self.viewControllers = []
     }
+    
+    private func createToolbarItems(from items: JSArray, options: JSObject) throws -> [UIBarButtonItem] {
+        var uiItems: [UIBarButtonItem] = []
+        
+        let imageBasePath = options["imageBasePath"] as? String
+        
+        for raw in items {
+            guard let item = raw as? JSObject else {
+                continue
+            }
+            
+            let type = item["type"] as? Int ?? 0
+            
+            
+            switch type {
+            case 0:
+                guard let data = item["data"] as? JSObject else {
+                    throw SimpleError(message: "data is missing")
+                }
+                let tag = data["tag"] as? Int ?? 0
+                let image = data["image"] as? String ?? ""
+                let style = data["style"] as? Int ?? 0
+                let tintColor = data["tintColor"] as? String ?? ""
+                let buttonItem = UIBarButtonItem(image: getImage(named: image, imageBasePath: imageBasePath), style: style != 0 ? .prominent : .plain, target: self, action: #selector(didTap))
+                buttonItem.tag = tag
+                
+                if(tintColor != "") {
+                    buttonItem.tintColor = UIColor.dynamic(light: tintColor, dark: nil)
+                }
+                
+                uiItems.append(buttonItem)
+                continue
+            case 1:
+                let flexibleSpace = UIBarButtonItem.flexibleSpace()
+                uiItems.append(flexibleSpace)
+                continue
+            case 2:
+                guard let data = item["data"] as? JSObject else {
+                    throw SimpleError(message: "data is missing")
+                }
+                guard let menuItems = data["items"] as? JSArray else {
+                    throw SimpleError(message: "menu items are missing")
+                }
+                let image = data["image"] as? String ?? ""
+                let title = data["title"] as? String ?? "test"
+                let menuTitle = data["menuTitle"] as? String ?? ""
+                let tintColor = data["tintColor"] as? String ?? ""
+                let actionButton = UIBarButtonItem(
+                    title: title,
+                    image: getImage(named: image, imageBasePath: imageBasePath),
+                    primaryAction: nil,
+                    menu: UIMenu(title: menuTitle, children: try getMenuItem(items: menuItems, imageBasePath: imageBasePath))
+                )
+                
+                if(tintColor != "") {
+                    actionButton.tintColor = UIColor.dynamic(light: tintColor, dark: nil)
+                }
+                
+                uiItems.append(actionButton)
+                continue
+            default:
+                continue
+            }
+        }
+        return uiItems
+    }
+    
+    private func getMenuItem(items: JSArray, imageBasePath: String?) throws -> [UIMenuElement]  {
+        var menuItems: [UIMenuElement] = []
+        for rawMenuItem in items {
+            guard let menuItem = rawMenuItem as? JSObject else {
+                continue
+            }
+            let type = menuItem["type"] as? Int ?? 0
+            
+            switch type {
+            case 0:
+                guard let data = menuItem["data"] as? JSObject else {
+                    throw SimpleError(message: "menuItem data is missing")
+                }
+                
+                let identifier = data["identifier"] as? String ?? ""
+                let title = data["title"] as? String ?? ""
+                let image = data["image"] as? String ?? ""
+                let attributes = data["attributes"] as? JSArray
+                
+                menuItems.append(UIAction(title: title, image: getImage(named: image, imageBasePath: imageBasePath), identifier: UIAction.Identifier(identifier), attributes: getMenuItemAttributes(attributes: attributes), handler: menuActionHandler ))
+                continue
+            case 1:
+                let divider = UIMenu(title: "", options: .displayInline, children: menuItems)
+                menuItems = [divider]
+                continue
+            default:
+                continue
+            }
+        }
+        return menuItems
+    }
+    
+    private func getMenuItemAttributes(attributes: JSArray?) -> UIMenuElement.Attributes {
+        var menuItemAttributes: UIMenuElement.Attributes = []
+        if let attributes = attributes, attributes.count != 0 {
+            for rawAttribute in attributes {
+                guard let attribute = rawAttribute as? Int else {
+                    continue
+                }
+                switch attribute {
+                case 1:
+                    menuItemAttributes = menuItemAttributes.union(.destructive)
+                    continue
+                case 2:
+                    menuItemAttributes = menuItemAttributes.union(.disabled)
+                    continue
+                case 3:
+                    menuItemAttributes = menuItemAttributes.union(.hidden)
+                    continue
+                default:
+                    menuItemAttributes = menuItemAttributes.union(.keepsMenuPresented)
+                }
+            }
+        }
+        
+        return menuItemAttributes
+    }
+    
+    func menuActionHandler(_ action: UIAction) -> Void {
+        pluginDelegate?.notifyListeners("onToolbarMenuActionButtonDidTap", data: ["identifier": action.identifier.rawValue])
+    }
+    
+    @objc func didTap(_ sender: UIBarButtonItem) {
+        pluginDelegate?.notifyListeners("onToolbarButtonDidTap", data: ["tag": sender.tag])
+    }
 }
 
-@available(iOS 18.4, *)
+@available(iOS 26.0, *)
 public class CapUIView {
     
     private var capUITabBarController: CapUITabBarController
@@ -242,6 +426,14 @@ public class CapUIView {
         try capUITabBarController.createTabs(items, options: options, searchBarItem: searchBarItem)
     }
     
+    func createToolbar(_ items: JSArray, options: JSObject) throws {
+        try capUITabBarController.createToolbar(items, options: options)
+    }
+    
+    func setToolbarItems(_ items: JSArray, options: JSObject) throws {
+        try capUITabBarController.setToolItems(items, options: options)
+    }
+    
     func showTabBar() {
         capUITabBarController.showTabBar()
     }
@@ -256,6 +448,14 @@ public class CapUIView {
     
     func hideSearch() {
         capUITabBarController.hideSearch()
+    }
+    
+    func showToolbar() {
+        capUITabBarController.showToolbar()
+    }
+    
+    func hideToolbar() {
+        capUITabBarController.hideToolbar()
     }
     
     func destroy() {

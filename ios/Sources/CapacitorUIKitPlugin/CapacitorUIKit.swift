@@ -1,8 +1,7 @@
 import Foundation
 import Capacitor
-import SVGKit
 
-@available(iOS 18.4, *)
+@available(iOS 26.0, *)
 @objc public class CapacitorUIKit: NSObject {
     
     private var capUIView: CapUIView?
@@ -40,6 +39,14 @@ import SVGKit
         try capUIView?.createTabBar(uiItems, options: options, searchBarItem: searchBarItem)
     }
     
+    public func createToolbar(_ items: JSArray, options: JSObject) throws {
+        try capUIView?.createToolbar(items, options: options)
+    }
+    
+    public func setToolbarItems(_ items: JSArray, options: JSObject) throws {
+        try capUIView?.setToolbarItems(items, options: options)
+    }
+    
     public func showTabBar() {
         capUIView?.showTabBar()
     }
@@ -56,17 +63,11 @@ import SVGKit
         capUIView?.hideSearch()
     }
     
-    private func getImage(named iconName: String, imageBasePath: String?) -> UIImage? {
-        guard let url = Bundle.main.url(forResource: "public/\(imageBasePath ?? "assets")/\(iconName)", withExtension: "svg") else {
-            print("⚠️ SVG not found:", iconName)
-            return nil
-        }
-        
-        guard let svgImage = SVGKImage(contentsOf: url) else {
-            print("⚠️ Error on create SVGKImage from local URL")
-            return nil
-        }
-        
-        return svgImage.uiImage
+    public func showToolbar() {
+        capUIView?.showToolbar()
+    }
+    
+    public func hideToolbar() {
+        capUIView?.hideToolbar()
     }
 }
