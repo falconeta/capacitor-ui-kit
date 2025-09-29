@@ -3,6 +3,20 @@ import { WebPlugin } from '@capacitor/core';
 import type { CapacitorUIKitPlugin, CreateOrSetToolbar, CreateTabBar } from './definitions';
 
 export class CapacitorUIKitWeb extends WebPlugin implements CapacitorUIKitPlugin {
+  createTopToolbar(options: CreateOrSetToolbar): Promise<void> {
+    console.log('createTopToolbar', options);
+    throw new Error('Method not implemented.');
+  }
+  setTopToolbarItems(options: CreateOrSetToolbar): Promise<void> {
+    console.log('setTopToolbarItems', options);
+    throw new Error('Method not implemented.');
+  }
+  showTopToolbar(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  hideTopToolbar(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   createToolbar(options: CreateOrSetToolbar): Promise<void> {
     console.log('createToolbar', options);
     throw new Error('Method not implemented.');

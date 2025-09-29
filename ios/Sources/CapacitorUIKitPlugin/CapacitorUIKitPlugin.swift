@@ -23,7 +23,11 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "showToolbar", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "hideToolbar", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createToolbar", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setToolbarItems", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "setToolbarItems", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "showTopToolbar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "hideTopToolbar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "createTopToolbar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setTopToolbarItems", returnType: CAPPluginReturnPromise)
     ]
     private let implementation = CapacitorUIKit()
     
@@ -91,6 +95,44 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
     
+    @objc func createTopToolbar(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            do {
+                guard let items = call.getArray("items", JSObject.self) else {
+                    throw SimpleError(message: "items is missing")
+                }
+                
+                guard let options = call.getObject("options") else {
+                    throw SimpleError(message: "options is missing")
+                }
+                
+                try implementation.createTopToolbar(items, options: options)
+                call.resolve([:])
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+    
+    @objc func setTopToolbarItems(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            do {
+                guard let items = call.getArray("items", JSObject.self) else {
+                    throw SimpleError(message: "items is missing")
+                }
+                
+                guard let options = call.getObject("options") else {
+                    throw SimpleError(message: "options is missing")
+                }
+                
+                try implementation.setTopToolbarItems(items, options: options)
+                call.resolve([:])
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+    
     @objc func showTabBar(_ call: CAPPluginCall) {
         DispatchQueue.main.sync {
             implementation.showTabBar()
@@ -129,6 +171,20 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func hideToolbar(_ call: CAPPluginCall) {
         DispatchQueue.main.sync {
             implementation.hideToolbar()
+            call.resolve([:])
+        }
+    }
+    
+    @objc func showTopToolbar(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            implementation.showTopToolbar()
+            call.resolve([:])
+        }
+    }
+    
+    @objc func hideTopToolbar(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            implementation.hideTopToolbar()
             call.resolve([:])
         }
     }

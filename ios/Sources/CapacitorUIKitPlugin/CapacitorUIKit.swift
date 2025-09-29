@@ -43,8 +43,16 @@ import Capacitor
         try capUIView?.createToolbar(items, options: options)
     }
     
+    public func createTopToolbar(_ items: JSArray, options: JSObject) throws {
+        try capUIView?.createTopToolbar(items, options: options)
+    }
+    
     public func setToolbarItems(_ items: JSArray, options: JSObject) throws {
         try capUIView?.setToolbarItems(items, options: options)
+    }
+    
+    public func setTopToolbarItems(_ items: JSArray, options: JSObject) throws {
+        try capUIView?.setTopToolbarItems(items, options: options)
     }
     
     public func showTabBar() {
@@ -69,5 +77,13 @@ import Capacitor
     
     public func hideToolbar() {
         capUIView?.hideToolbar()
+    }
+    
+    public func showTopToolbar() {
+        capUIView?.showTopToolbar()
+    }
+    
+    public func hideTopToolbar() {
+        capUIView?.hideTopToolbar()
     }
 }

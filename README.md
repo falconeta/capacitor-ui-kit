@@ -15,13 +15,17 @@ npx cap sync
 
 * [`createTabBar(...)`](#createtabbar)
 * [`createToolbar(...)`](#createtoolbar)
+* [`createTopToolbar(...)`](#createtoptoolbar)
 * [`setToolbarItems(...)`](#settoolbaritems)
+* [`setTopToolbarItems(...)`](#settoptoolbaritems)
 * [`showTabBar()`](#showtabbar)
 * [`hideTabBar()`](#hidetabbar)
 * [`showSearch()`](#showsearch)
 * [`hideSearch()`](#hidesearch)
 * [`showToolbar()`](#showtoolbar)
 * [`hideToolbar()`](#hidetoolbar)
+* [`showTopToolbar()`](#showtoptoolbar)
+* [`hideTopToolbar()`](#hidetoptoolbar)
 * [Interfaces](#interfaces)
 * [Enums](#enums)
 
@@ -56,10 +60,36 @@ createToolbar(options: CreateOrSetToolbar) => Promise<void>
 --------------------
 
 
+### createTopToolbar(...)
+
+```typescript
+createTopToolbar(options: CreateOrSetToolbar) => Promise<void>
+```
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#createorsettoolbar">CreateOrSetToolbar</a></code> |
+
+--------------------
+
+
 ### setToolbarItems(...)
 
 ```typescript
 setToolbarItems(options: CreateOrSetToolbar) => Promise<void>
+```
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#createorsettoolbar">CreateOrSetToolbar</a></code> |
+
+--------------------
+
+
+### setTopToolbarItems(...)
+
+```typescript
+setTopToolbarItems(options: CreateOrSetToolbar) => Promise<void>
 ```
 
 | Param         | Type                                                              |
@@ -118,6 +148,24 @@ showToolbar() => Promise<void>
 
 ```typescript
 hideToolbar() => Promise<void>
+```
+
+--------------------
+
+
+### showTopToolbar()
+
+```typescript
+showTopToolbar() => Promise<void>
+```
+
+--------------------
+
+
+### hideTopToolbar()
+
+```typescript
+hideTopToolbar() => Promise<void>
 ```
 
 --------------------

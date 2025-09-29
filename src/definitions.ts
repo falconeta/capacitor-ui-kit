@@ -103,11 +103,15 @@ export interface CreateOrSetToolbar {
 export interface CapacitorUIKitPlugin extends Plugin {
   createTabBar(options: CreateTabBar): Promise<void>;
   createToolbar(options: CreateOrSetToolbar): Promise<void>;
+  createTopToolbar(options: CreateOrSetToolbar): Promise<void>;
   setToolbarItems(options: CreateOrSetToolbar): Promise<void>;
+  setTopToolbarItems(options: CreateOrSetToolbar): Promise<void>;
   showTabBar(): Promise<void>;
   hideTabBar(): Promise<void>;
   showSearch(): Promise<void>;
   hideSearch(): Promise<void>;
   showToolbar(): Promise<void>;
   hideToolbar(): Promise<void>;
+  showTopToolbar(): Promise<void>;
+  hideTopToolbar(): Promise<void>;
 }

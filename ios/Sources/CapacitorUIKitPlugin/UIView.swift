@@ -4,63 +4,39 @@ import UIKit
 
 /// A passthrough container view that only intercepts touches for the UITabBar.
 /// All other touches are passed through to the underlying webView.
-class PassthroughView: UIView {
+final class PassthroughView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        // 1) UITabBar
-        if let tabBar: UITabBar = findSubview(ofType: UITabBar.self, in: self) {
-            let p = tabBar.convert(point, from: self)
-            if let hit = tabBar.hitTest(p, with: event) {
-                return hit
-            }
-        }
-        
-        // 2) UISearchBar
-        if let searchBar: UISearchBar = findSubview(ofType: UISearchBar.self, in: self) {
-            let p = searchBar.convert(point, from: self)
-            if let hit = searchBar.hitTest(p, with: event) {
-                return hit
-            }
-        }
-        
-        // 3) UISearchTextField (iOS 13+)
+
+        if let hit = passThroughFirstHit(UITabBar.self, point, event) { return hit }
+        if let hit = passThroughFirstHit(UISearchBar.self, point, event) { return hit }
+
         if #available(iOS 13.0, *),
-           let searchField: UISearchTextField = findSubview(ofType: UISearchTextField.self, in: self) {
-            let p = searchField.convert(point, from: self)
-            if let hit = searchField.hitTest(p, with: event) {
-                return hit
-            }
+           let hit = passThroughFirstHit(UISearchTextField.self, point, event) { return hit }
+
+        if let hit = passThroughFirstHit(UITableView.self, point, event) { return hit }
+        if let hit = passThroughFirstHit(UIToolbar.self, point, event) { return hit }
+
+        return nil
+    }
+
+    private func passThroughFirstHit<T: UIView>(_ type: T.Type, _ point: CGPoint, _ event: UIEvent?) -> UIView? {
+        for v in findSubviews(ofType: type) where v.isUserInteractionEnabled && !v.isHidden && v.alpha > 0.01 {
+            let p = v.convert(point, from: self)
+            if let hit = v.hitTest(p, with: event) { return hit }
         }
-        
-        // 4) Vista del SearchResultsViewController (tabella e celle)
-        if let resultsView: UITableView = findSubview(ofType: UITableView.self, in: self) {
-            let p = resultsView.convert(point, from: self)
-            if let hit = resultsView.hitTest(p, with: event) {
-                return hit
-            }
-        }
-        // 5) Vista del UIToolbar
-        if let resultsView: UIToolbar = findSubview(ofType: UIToolbar.self, in: self) {
-            let p = resultsView.convert(point, from: self)
-            if let hit = resultsView.hitTest(p, with: event) {
-                return hit
-            }
-        }
-        
-        
-        // Tutto il resto → passa al webView
         return nil
     }
     
-    /// Ricerca ricorsiva per sottoview di un tipo specifico
-    private func findSubview<T: UIView>(ofType type: T.Type, in root: UIView) -> T? {
-        if let v = root as? T { return v }
-        for sub in root.subviews {
-            if let found: T = findSubview(ofType: type, in: sub) {
-                return found
+    private func findSubviews<T: UIView>(ofType type: T.Type) -> [T] {
+            var result: [T] = []
+            func dfs(_ view: UIView) {
+                if let v = view as? T { result.append(v) }
+                // reversed: le ultime aggiunte sono davanti
+                for sub in view.subviews.reversed() { dfs(sub) }
             }
+            dfs(self)
+            return result
         }
-        return nil
-    }
 }
 
 @available(iOS 26, *)
@@ -69,6 +45,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
     var pluginDelegate: CapacitorUIKitPlugin?
     var search: UISearchTab?
     private var toolbar: UIToolbar?
+    private var topToolbar: UIToolbar?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -217,8 +194,43 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         ])
     }
     
+    func createTopToolbar(_ items: JSArray, options: JSObject) throws {
+        
+        if(topToolbar != nil) {
+            return
+        }
+        
+        let tb = UIToolbar()
+        try tb.setItems(createToolbarItems(from: items, options: options), animated: false)
+        
+        
+        self.topToolbar = tb
+        
+        tb.translatesAutoresizingMaskIntoConstraints = false
+        
+        let buttonStyle = UIBarButtonItemAppearance()
+        buttonStyle.configureWithDefault(for: .plain)
+        
+        
+        
+        tb.standardAppearance.prominentButtonAppearance = buttonStyle
+        tb.scrollEdgeAppearance?.prominentButtonAppearance = buttonStyle
+        
+        self.view.addSubview(tb)
+        
+        NSLayoutConstraint.activate([
+            tb.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16), // align right with tabBar
+            tb.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16), // align right with tabBar
+            tb.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+        ])
+    }
+    
     func setToolItems(_ items: JSArray, options: JSObject) throws {
         try toolbar?.setItems(createToolbarItems(from: items, options: options), animated: true)
+    }
+    
+    func setTopToolItems(_ items: JSArray, options: JSObject) throws {
+        try topToolbar?.setItems(createToolbarItems(from: items, options: options), animated: true)
     }
     
     /// Show the search tab dynamically
@@ -232,6 +244,10 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         toolbar?.isHidden = false
     }
     
+    func showTopToolbar() {
+        topToolbar?.isHidden = false
+    }
+    
     /// Hide the search tab dynamically
     func hideSearch() {
         self.tabs.removeAll { $0 is UISearchTab }
@@ -239,6 +255,10 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
     
     func hideToolbar() {
         toolbar?.isHidden = true
+    }
+    
+    func hideTopToolbar() {
+        topToolbar?.isHidden = true
     }
     
     /// Show tab bar
@@ -430,8 +450,16 @@ public class CapUIView {
         try capUITabBarController.createToolbar(items, options: options)
     }
     
+    func createTopToolbar(_ items: JSArray, options: JSObject) throws {
+        try capUITabBarController.createTopToolbar(items, options: options)
+    }
+    
     func setToolbarItems(_ items: JSArray, options: JSObject) throws {
         try capUITabBarController.setToolItems(items, options: options)
+    }
+    
+    func setTopToolbarItems(_ items: JSArray, options: JSObject) throws {
+        try capUITabBarController.setTopToolItems(items, options: options)
     }
     
     func showTabBar() {
@@ -456,6 +484,14 @@ public class CapUIView {
     
     func hideToolbar() {
         capUITabBarController.hideToolbar()
+    }
+    
+    func showTopToolbar() {
+        capUITabBarController.showTopToolbar()
+    }
+    
+    func hideTopToolbar() {
+        capUITabBarController.hideTopToolbar()
     }
     
     func destroy() {
