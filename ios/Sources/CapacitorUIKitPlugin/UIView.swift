@@ -6,19 +6,19 @@ import UIKit
 /// All other touches are passed through to the underlying webView.
 final class PassthroughView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-
+        
         if let hit = passThroughFirstHit(UITabBar.self, point, event) { return hit }
         if let hit = passThroughFirstHit(UISearchBar.self, point, event) { return hit }
-
+        
         if #available(iOS 13.0, *),
            let hit = passThroughFirstHit(UISearchTextField.self, point, event) { return hit }
-
+        
         if let hit = passThroughFirstHit(UITableView.self, point, event) { return hit }
         if let hit = passThroughFirstHit(UIToolbar.self, point, event) { return hit }
-
+        
         return nil
     }
-
+    
     private func passThroughFirstHit<T: UIView>(_ type: T.Type, _ point: CGPoint, _ event: UIEvent?) -> UIView? {
         for v in findSubviews(ofType: type) where v.isUserInteractionEnabled && !v.isHidden && v.alpha > 0.01 {
             let p = v.convert(point, from: self)
@@ -28,15 +28,15 @@ final class PassthroughView: UIView {
     }
     
     private func findSubviews<T: UIView>(ofType type: T.Type) -> [T] {
-            var result: [T] = []
-            func dfs(_ view: UIView) {
-                if let v = view as? T { result.append(v) }
-                // reversed: le ultime aggiunte sono davanti
-                for sub in view.subviews.reversed() { dfs(sub) }
-            }
-            dfs(self)
-            return result
+        var result: [T] = []
+        func dfs(_ view: UIView) {
+            if let v = view as? T { result.append(v) }
+            // reversed: le ultime aggiunte sono davanti
+            for sub in view.subviews.reversed() { dfs(sub) }
         }
+        dfs(self)
+        return result
+    }
 }
 
 @available(iOS 26, *)
@@ -60,31 +60,35 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
     
     /// Create and configure tabs based on incoming items + options
     func createTabs(_ items: [UITab], options: JSObject, searchBarItem: JSObject?) throws {
-        // Create search tab
-        search = UISearchTab { _ in
-            let placeholder = searchBarItem?["placeholder"] as? String
-            let searchController = UISearchController(searchResultsController: nil)
-            searchController.obscuresBackgroundDuringPresentation = false
-            searchController.searchBar.placeholder = placeholder ?? ""
-            
-            let containerVC = UIViewController()
-            containerVC.view.backgroundColor = .clear
-            containerVC.navigationItem.searchController = searchController
-            containerVC.navigationItem.hidesSearchBarWhenScrolling = false
-            
-            let nav = UINavigationController(rootViewController: containerVC)
-            
-            return nav
-        }
         
         // Assign incoming tabs
-        self.tabs = items
+        self.setTabs(items, animated: true)
         
-        // Append search tab by default
-        if let search = search {
-            self.tabs.append(search)
-            search.automaticallyActivatesSearch = true
+        if(options["hasSearchBar"] as? Bool ?? false) {
+            // Create search tab
+            search = UISearchTab { _ in
+                let placeholder = searchBarItem?["placeholder"] as? String
+                let searchController = UISearchController(searchResultsController: nil)
+                searchController.obscuresBackgroundDuringPresentation = false
+                searchController.searchBar.placeholder = placeholder ?? ""
+                
+                let containerVC = UIViewController()
+                containerVC.view.backgroundColor = .clear
+                containerVC.navigationItem.searchController = searchController
+                containerVC.navigationItem.hidesSearchBarWhenScrolling = false
+                
+                let nav = UINavigationController(rootViewController: containerVC)
+                
+                return nav
+            }
+            
+            // Append search tab by default
+            if let search = search {
+                self.tabs.append(search)
+                search.automaticallyActivatesSearch = true
+            }
         }
+        
         
         // Extract options
         guard let selectedTag = options["selectedTag"] as? Int else {
@@ -141,12 +145,15 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         tabBar.scrollEdgeAppearance = appearance
     }
     
+    func removeTabs() {
+        self.tabs = []
+    }
+    
     func tabBarController(_ tabBarController: UITabBarController,
                           didSelectTab selectedTab: UITab,
                           previousTab: UITab?) {
         let tagString = selectedTab.identifier
         guard let tag = Int(tagString) else { return }
-        
         pluginDelegate?.notifyListeners("onTabBarDidSelect", data: ["tag": tag])
     }
     
@@ -163,6 +170,10 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         }
     }
     
+    func tabBarSelected() -> Int? {
+        return selectedIndex
+    }
+    
     func createToolbar(_ items: JSArray, options: JSObject) throws {
         
         if(toolbar != nil) {
@@ -171,7 +182,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         
         let tb = UIToolbar()
         try tb.setItems(createToolbarItems(from: items, options: options), animated: false)
-
+        
         
         self.toolbar = tb
         
@@ -414,6 +425,7 @@ public class CapUIView {
     
     private var capUITabBarController: CapUITabBarController
     private var delegate: CapacitorUIKitPlugin?
+    private var passthroughContainer: PassthroughView?
     
     init(delegate: CapacitorUIKitPlugin) {
         self.delegate = delegate
@@ -435,6 +447,7 @@ public class CapUIView {
             
             // Add UITabBarController.view inside passthrough
             passthroughContainer.addSubview(self.capUITabBarController.view)
+            self.passthroughContainer = passthroughContainer
             self.capUITabBarController.view.frame = passthroughContainer.bounds
             self.capUITabBarController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             
@@ -442,8 +455,18 @@ public class CapUIView {
         }
     }
     
+    func reRender() {
+        guard let webView = self.delegate?.bridge?.webView else { return }
+        guard let passthroughContainer = self.passthroughContainer else { return }
+        webView.superview?.insertSubview(passthroughContainer, aboveSubview: webView)
+    }
+    
     func createTabBar(_ items: [UITab], options: JSObject, searchBarItem: JSObject?) throws {
         try capUITabBarController.createTabs(items, options: options, searchBarItem: searchBarItem)
+    }
+    
+    func removeTabs()  {
+        capUITabBarController.removeTabs()
     }
     
     func createToolbar(_ items: JSArray, options: JSObject) throws {
@@ -468,6 +491,10 @@ public class CapUIView {
     
     func hideTabBar() {
         capUITabBarController.hideTabBar()
+    }
+    
+    func tabBarSelected() -> Int? {
+        return capUITabBarController.tabBarSelected()
     }
     
     func showSearch() {

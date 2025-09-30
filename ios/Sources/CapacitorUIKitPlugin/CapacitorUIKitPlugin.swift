@@ -15,9 +15,12 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CapacitorUIKitPlugin"
     public let jsName = "CapacitorUIKit"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "reRender", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createTabBar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "removeTabs", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showTabBar", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "hideTabBar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "tabBarSelected", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showSearch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "hideSearch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showToolbar", returnType: CAPPluginReturnPromise),
@@ -28,6 +31,7 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "hideTopToolbar", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createTopToolbar", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setTopToolbarItems", returnType: CAPPluginReturnPromise)
+        
     ]
     private let implementation = CapacitorUIKit()
     
@@ -73,6 +77,22 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
             } catch {
                 call.reject(error.localizedDescription)
             }
+        }
+    }
+    
+    @objc func removeTabs(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            implementation.removeTabs()
+            call.resolve([:])
+            
+        }
+    }
+    
+    @objc func reRender(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            implementation.reRender()
+            call.resolve([:])
+            
         }
     }
     
@@ -144,6 +164,12 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.sync {
             implementation.hideTabBar()
             call.resolve([:])
+        }
+    }
+    
+    @objc func tabBarSelected(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            call.resolve(["value": implementation.tabBarSelected() ?? nil ])
         }
     }
     

@@ -13,7 +13,9 @@ npx cap sync
 
 <docgen-index>
 
+* [`reRender()`](#rerender)
 * [`createTabBar(...)`](#createtabbar)
+* [`removeTabs()`](#removetabs)
 * [`createToolbar(...)`](#createtoolbar)
 * [`createTopToolbar(...)`](#createtoptoolbar)
 * [`setToolbarItems(...)`](#settoolbaritems)
@@ -26,6 +28,7 @@ npx cap sync
 * [`hideToolbar()`](#hidetoolbar)
 * [`showTopToolbar()`](#showtoptoolbar)
 * [`hideTopToolbar()`](#hidetoptoolbar)
+* [`tabBarSelected()`](#tabbarselected)
 * [Interfaces](#interfaces)
 * [Enums](#enums)
 
@@ -33,6 +36,15 @@ npx cap sync
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### reRender()
+
+```typescript
+reRender() => Promise<void>
+```
+
+--------------------
+
 
 ### createTabBar(...)
 
@@ -43,6 +55,15 @@ createTabBar(options: CreateTabBar) => Promise<void>
 | Param         | Type                                                  |
 | ------------- | ----------------------------------------------------- |
 | **`options`** | <code><a href="#createtabbar">CreateTabBar</a></code> |
+
+--------------------
+
+
+### removeTabs()
+
+```typescript
+removeTabs() => Promise<void>
+```
 
 --------------------
 
@@ -171,6 +192,17 @@ hideTopToolbar() => Promise<void>
 --------------------
 
 
+### tabBarSelected()
+
+```typescript
+tabBarSelected() => Promise<{ value: number | undefined; }>
+```
+
+**Returns:** <code>Promise&lt;{ value: number; }&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -195,20 +227,21 @@ hideTopToolbar() => Promise<void>
 
 #### TabBarOptions
 
-| Prop                              | Type                |
-| --------------------------------- | ------------------- |
-| **`selectedTag`**                 | <code>number</code> |
-| **`fontSize`**                    | <code>number</code> |
-| **`unselectedFontSize`**          | <code>number</code> |
-| **`tintColor`**                   | <code>string</code> |
-| **`fontColor`**                   | <code>string</code> |
-| **`unselectedFontColor`**         | <code>string</code> |
-| **`unselectedItemTintColor`**     | <code>string</code> |
-| **`fontColorDark`**               | <code>string</code> |
-| **`unselectedFontColorDark`**     | <code>string</code> |
-| **`tintColorDark`**               | <code>string</code> |
-| **`unselectedItemTintColorDark`** | <code>string</code> |
-| **`imageBasePath`**               | <code>string</code> |
+| Prop                              | Type                 |
+| --------------------------------- | -------------------- |
+| **`hasSearchBar`**                | <code>boolean</code> |
+| **`selectedTag`**                 | <code>number</code>  |
+| **`fontSize`**                    | <code>number</code>  |
+| **`unselectedFontSize`**          | <code>number</code>  |
+| **`tintColor`**                   | <code>string</code>  |
+| **`fontColor`**                   | <code>string</code>  |
+| **`unselectedFontColor`**         | <code>string</code>  |
+| **`unselectedItemTintColor`**     | <code>string</code>  |
+| **`fontColorDark`**               | <code>string</code>  |
+| **`unselectedFontColorDark`**     | <code>string</code>  |
+| **`tintColorDark`**               | <code>string</code>  |
+| **`unselectedItemTintColorDark`** | <code>string</code>  |
+| **`imageBasePath`**               | <code>string</code>  |
 
 
 #### SearchBarItem

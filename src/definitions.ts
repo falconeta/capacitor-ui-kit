@@ -12,6 +12,7 @@ export interface SearchBarItem {
 }
 
 export interface TabBarOptions {
+  hasSearchBar: boolean;
   selectedTag: number;
   fontSize: number;
   unselectedFontSize: number;
@@ -101,7 +102,9 @@ export interface CreateOrSetToolbar {
 }
 
 export interface CapacitorUIKitPlugin extends Plugin {
+  reRender(): Promise<void>;
   createTabBar(options: CreateTabBar): Promise<void>;
+  removeTabs(): Promise<void>;
   createToolbar(options: CreateOrSetToolbar): Promise<void>;
   createTopToolbar(options: CreateOrSetToolbar): Promise<void>;
   setToolbarItems(options: CreateOrSetToolbar): Promise<void>;
@@ -114,4 +117,5 @@ export interface CapacitorUIKitPlugin extends Plugin {
   hideToolbar(): Promise<void>;
   showTopToolbar(): Promise<void>;
   hideTopToolbar(): Promise<void>;
+  tabBarSelected(): Promise<{ value: number | undefined }>;
 }

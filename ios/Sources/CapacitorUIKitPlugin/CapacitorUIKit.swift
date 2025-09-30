@@ -39,6 +39,14 @@ import Capacitor
         try capUIView?.createTabBar(uiItems, options: options, searchBarItem: searchBarItem)
     }
     
+    public func removeTabs() {
+        capUIView?.removeTabs()
+    }
+    
+    public func reRender() {
+        capUIView?.reRender()
+    }
+    
     public func createToolbar(_ items: JSArray, options: JSObject) throws {
         try capUIView?.createToolbar(items, options: options)
     }
@@ -61,6 +69,10 @@ import Capacitor
     
     public func hideTabBar() {
         capUIView?.hideTabBar()
+    }
+    
+    public func tabBarSelected() -> Int? {
+        return capUIView?.tabBarSelected()
     }
     
     public func showSearch() {
