@@ -1,6 +1,6 @@
 {
   "name": "@falconeta/capacitor-ui-kit",
-  "version": "0.0.1",
+  "version": "7.0.0",
   "description": "plugin that opens the gate to using iOS UIKit in the Capacitor ecosystem",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
