@@ -70,5 +70,8 @@
     "ios": {
       "src": "ios"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
