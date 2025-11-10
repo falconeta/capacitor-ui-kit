@@ -71,6 +71,8 @@ export interface ToolbarMenuItemData {
     attributes?: ToolbarMenuItemAttributes[];
     title?: string;
     image?: string;
+    tintColor?: string;
+    tintColorDark?: string;
   };
   [ToolbarMenuItemType.Separator]: void;
 }
@@ -82,12 +84,15 @@ export interface ToolbarItemData {
     title?: string;
     style?: ToolbarButtonItemStyle;
     tintColor?: string;
+    tintColorDark?: string;
   };
   [ToolbarItemType.FlexibleSpace]: void;
   [ToolbarItemType.Menu]: {
     image?: string;
     title?: string;
     menuTitle?: string;
+    tintColor?: string;
+    tintColorDark?: string;
     items: ToolbarMenuItem<ToolbarMenuItemType>[];
   };
 }
@@ -102,6 +107,7 @@ export interface CreateOrSetToolbar {
 }
 
 export interface CapacitorUIKitPlugin extends Plugin {
+  initialize(): Promise<void>;
   reRender(): Promise<void>;
   createTabBar(options: CreateTabBar): Promise<void>;
   removeTabs(): Promise<void>;

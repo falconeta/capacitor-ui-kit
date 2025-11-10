@@ -15,6 +15,7 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CapacitorUIKitPlugin"
     public let jsName = "CapacitorUIKit"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "reRender", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createTabBar", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "removeTabs", returnType: CAPPluginReturnPromise),
@@ -87,6 +88,15 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
             
         }
     }
+    
+    @objc func initialize(_ call: CAPPluginCall) {
+        DispatchQueue.main.sync {
+            implementation.initialize()
+            call.resolve([:])
+            
+        }
+    }
+    
     
     @objc func reRender(_ call: CAPPluginCall) {
         DispatchQueue.main.sync {

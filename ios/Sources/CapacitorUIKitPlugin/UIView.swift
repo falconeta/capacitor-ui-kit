@@ -230,9 +230,9 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         self.view.addSubview(tb)
         
         NSLayoutConstraint.activate([
-            tb.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16), // align right with tabBar
-            tb.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16), // align right with tabBar
-            tb.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            tb.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
+            tb.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+            tb.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
         ])
     }
     
@@ -309,11 +309,12 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
                 let image = data["image"] as? String ?? ""
                 let style = data["style"] as? Int ?? 0
                 let tintColor = data["tintColor"] as? String ?? ""
+                let tintColorDark = data["tintColorDark"] as? String
                 let buttonItem = UIBarButtonItem(image: getImage(named: image, imageBasePath: imageBasePath), style: style != 0 ? .prominent : .plain, target: self, action: #selector(didTap))
                 buttonItem.tag = tag
                 
                 if(tintColor != "") {
-                    buttonItem.tintColor = UIColor.dynamic(light: tintColor, dark: nil)
+                    buttonItem.tintColor = UIColor.dynamic(light: tintColor, dark: tintColorDark)
                 }
                 
                 uiItems.append(buttonItem)
@@ -333,6 +334,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
                 let title = data["title"] as? String ?? "test"
                 let menuTitle = data["menuTitle"] as? String ?? ""
                 let tintColor = data["tintColor"] as? String ?? ""
+                let tintColorDark = data["tintColorDark"] as? String
                 let actionButton = UIBarButtonItem(
                     title: title,
                     image: getImage(named: image, imageBasePath: imageBasePath),
@@ -341,7 +343,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
                 )
                 
                 if(tintColor != "") {
-                    actionButton.tintColor = UIColor.dynamic(light: tintColor, dark: nil)
+                    actionButton.tintColor = UIColor.dynamic(light: tintColor, dark: tintColorDark)
                 }
                 
                 uiItems.append(actionButton)
@@ -371,8 +373,16 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
                 let title = data["title"] as? String ?? ""
                 let image = data["image"] as? String ?? ""
                 let attributes = data["attributes"] as? JSArray
+                let tintColor = data["tintColor"] as? String ?? ""
+                let tintColorDark = data["tintColorDark"] as? String
                 
-                menuItems.append(UIAction(title: title, image: getImage(named: image, imageBasePath: imageBasePath), identifier: UIAction.Identifier(identifier), attributes: getMenuItemAttributes(attributes: attributes), handler: menuActionHandler ))
+                let actionButton = UIAction(title: title, image: getImage(named: image, imageBasePath: imageBasePath), identifier: UIAction.Identifier(identifier), attributes: getMenuItemAttributes(attributes: attributes), handler: menuActionHandler )
+                
+                if(tintColor != "") {
+                    actionButton.image = actionButton.image?.withTintColor( UIColor.dynamic(light: tintColor, dark: tintColorDark))
+                }
+                
+                menuItems.append(actionButton)
                 continue
             case 1:
                 let divider = UIMenu(title: "", options: .displayInline, children: menuItems)
@@ -431,6 +441,9 @@ public class CapUIView {
         self.delegate = delegate
         self.capUITabBarController = CapUITabBarController()
         capUITabBarController.pluginDelegate = delegate
+    }
+    
+    public func initialize() {
         self.render()
     }
     

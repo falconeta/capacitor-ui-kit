@@ -13,6 +13,7 @@ npx cap sync
 
 <docgen-index>
 
+* [`initialize()`](#initialize)
 * [`reRender()`](#rerender)
 * [`createTabBar(...)`](#createtabbar)
 * [`removeTabs()`](#removetabs)
@@ -36,6 +37,15 @@ npx cap sync
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### initialize()
+
+```typescript
+initialize() => Promise<void>
+```
+
+--------------------
+
 
 ### reRender()
 
@@ -269,11 +279,11 @@ tabBarSelected() => Promise<{ value: number | undefined; }>
 
 #### ToolbarItemData
 
-| Prop                                  | Type                                                                                                                                                                                        |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`[ToolbarItemType.Button]`**        | <code>{ tag: number; image?: string; title?: string; style?: <a href="#toolbarbuttonitemstyle">ToolbarButtonItemStyle</a>; tintColor?: string; }</code>                                     |
-| **`[ToolbarItemType.FlexibleSpace]`** | <code>void</code>                                                                                                                                                                           |
-| **`[ToolbarItemType.Menu]`**          | <code>{ image?: string; title?: string; menuTitle?: string; items: <a href="#toolbarmenuitem">ToolbarMenuItem</a>&lt;<a href="#toolbarmenuitemtype">ToolbarMenuItemType</a>&gt;[]; }</code> |
+| Prop                                  | Type                                                                                                                                                                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`[ToolbarItemType.Button]`**        | <code>{ tag: number; image?: string; title?: string; style?: <a href="#toolbarbuttonitemstyle">ToolbarButtonItemStyle</a>; tintColor?: string; tintColorDark?: string; }</code>                                                         |
+| **`[ToolbarItemType.FlexibleSpace]`** | <code>void</code>                                                                                                                                                                                                                       |
+| **`[ToolbarItemType.Menu]`**          | <code>{ image?: string; title?: string; menuTitle?: string; tintColor?: string; tintColorDark?: string; items: <a href="#toolbarmenuitem">ToolbarMenuItem</a>&lt;<a href="#toolbarmenuitemtype">ToolbarMenuItemType</a>&gt;[]; }</code> |
 
 
 #### ToolbarMenuItem
@@ -286,10 +296,10 @@ tabBarSelected() => Promise<{ value: number | undefined; }>
 
 #### ToolbarMenuItemData
 
-| Prop                                  | Type                                                                                                           |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **`[ToolbarMenuItemType.Action]`**    | <code>{ identifier: string; attributes?: ToolbarMenuItemAttributes[]; title?: string; image?: string; }</code> |
-| **`[ToolbarMenuItemType.Separator]`** | <code>void</code>                                                                                              |
+| Prop                                  | Type                                                                                                                                                       |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`[ToolbarMenuItemType.Action]`**    | <code>{ identifier: string; attributes?: ToolbarMenuItemAttributes[]; title?: string; image?: string; tintColor?: string; tintColorDark?: string; }</code> |
+| **`[ToolbarMenuItemType.Separator]`** | <code>void</code>                                                                                                                                          |
 
 
 #### ToolbarOptions

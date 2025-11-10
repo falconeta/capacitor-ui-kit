@@ -3,6 +3,9 @@ import { WebPlugin } from '@capacitor/core';
 import type { CapacitorUIKitPlugin, CreateOrSetToolbar, CreateTabBar } from './definitions';
 
 export class CapacitorUIKitWeb extends WebPlugin implements CapacitorUIKitPlugin {
+  initialize(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   reRender(): Promise<void> {
     throw new Error('Method not implemented.');
   }
