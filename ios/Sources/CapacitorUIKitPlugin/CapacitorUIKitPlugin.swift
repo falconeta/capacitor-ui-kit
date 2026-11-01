@@ -1,8 +1,9 @@
 import Foundation
 import Capacitor
 
-struct SimpleError: Error {
+struct SimpleError: LocalizedError {
     let message: String
+    var errorDescription: String? { message }
 }
 
 /**
@@ -15,6 +16,9 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CapacitorUIKitPlugin"
     public let jsName = "CapacitorUIKit"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "beginTopToolbarTransition", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "updateTopToolbarTransition", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "finishTopToolbarTransition", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "reRender", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createTabBar", returnType: CAPPluginReturnPromise),
@@ -41,6 +45,44 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         implementation.createView(delegate: self)
     }
     
+    override public func addListener(_ call: CAPPluginCall) {
+        super.addListener(call)
+        if ["onTabBarLayoutChange", "onTopToolbarLayoutChange"].contains(call.getString("eventName") ?? "") {
+            // A listener may arrive after layout, or while UIKit is creating the tabs.
+            DispatchQueue.main.async { [weak self] in
+                self?.implementation.publishTabBarLayout()
+            }
+        }
+    }
+
+    @objc func beginTopToolbarTransition(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            do {
+                guard let id = call.getInt("id"), let source = call.getObject("from"), let target = call.getObject("to") else {
+                    throw SimpleError(message: "Toolbar transition requires id, from and to")
+                }
+                let nativeDuration = try self.implementation.beginTopToolbarTransition(id, source: source, target: target,
+                    backwards: call.getString("direction") == "back", duration: (call.getDouble("duration") ?? 540) / 1000)
+                // UIKit owns its standard spring/morph. Let the web page use
+                // the same duration without pausing native material rendering.
+                DispatchQueue.main.async { call.resolve(["duration": nativeDuration * 1000, "timing": "native"]) }
+            } catch { call.reject(error.localizedDescription) }
+        }
+    }
+
+    @objc func updateTopToolbarTransition(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.implementation.updateTopToolbarTransition(call.getInt("id") ?? -1, progress: CGFloat(call.getDouble("progress") ?? 0))
+            call.resolve()
+        }
+    }
+
+    @objc func finishTopToolbarTransition(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.implementation.finishTopToolbarTransition(call.getInt("id") ?? -1, completed: call.getBool("completed") ?? false) { call.resolve() }
+        }
+    }
+
     @objc func createTabBar(_ call: CAPPluginCall) {
         DispatchQueue.main.sync {
             do {
@@ -54,8 +96,12 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
                 
                 let searchBarItem = call.getObject("searchBarItem")
                 
-                try implementation.createTabBar(items, options: options, searchBarItem: searchBarItem)
-                call.resolve([:])
+                implementation.afterTopToolbarTransition { [self] in
+                    do {
+                        try implementation.createTabBar(items, options: options, searchBarItem: searchBarItem)
+                        call.resolve([:])
+                    } catch { call.reject(error.localizedDescription) }
+                }
             } catch {
                 call.reject(error.localizedDescription)
             }

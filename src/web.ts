@@ -3,6 +3,9 @@ import { WebPlugin } from '@capacitor/core';
 import type { CapacitorUIKitPlugin, CreateOrSetToolbar, CreateTabBar } from './definitions';
 
 export class CapacitorUIKitWeb extends WebPlugin implements CapacitorUIKitPlugin {
+  async beginTopToolbarTransition(): Promise<{ duration: number; timing: 'native' }> { throw this.unimplemented('Native toolbar transitions require iOS'); }
+  async updateTopToolbarTransition(): Promise<void> { throw this.unimplemented('Native toolbar transitions require iOS'); }
+  async finishTopToolbarTransition(): Promise<void> { throw this.unimplemented('Native toolbar transitions require iOS'); }
   initialize(): Promise<void> {
     throw new Error('Method not implemented.');
   }
