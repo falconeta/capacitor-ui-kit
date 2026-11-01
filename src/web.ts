@@ -3,6 +3,14 @@ import { WebPlugin } from '@capacitor/core';
 import type { CapacitorUIKitPlugin, CreateOrSetToolbar, CreateTabBar } from './definitions';
 
 export class CapacitorUIKitWeb extends WebPlugin implements CapacitorUIKitPlugin {
+  async presentActionSheet(): Promise<{ role: string }> { throw this.unimplemented('Native action sheets require iOS'); }
+  async presentDialog(): Promise<{ role: string }> { throw this.unimplemented('Native dialogs require iOS'); }
+  async dismissDialog(): Promise<{ dismissed: boolean }> { throw this.unimplemented('Native dialogs require iOS'); }
+  async dismissWebSheet(): Promise<void> { throw this.unimplemented('Native web sheets require iOS'); }
+  async presentToast(): Promise<void> { throw this.unimplemented('Native toasts require iOS'); }
+  async dismissToast(): Promise<void> { throw this.unimplemented('Native toasts require iOS'); }
+  async completeWebSheetAction(): Promise<void> { throw this.unimplemented('Native web sheets require iOS'); }
+  async presentWebSheet(): Promise<{ role: 'close' | 'gesture' }> { throw this.unimplemented('Native web sheets require iOS'); }
   async beginTopToolbarTransition(): Promise<{ duration: number; timing: 'native' }> { throw this.unimplemented('Native toolbar transitions require iOS'); }
   async updateTopToolbarTransition(): Promise<void> { throw this.unimplemented('Native toolbar transitions require iOS'); }
   async finishTopToolbarTransition(): Promise<void> { throw this.unimplemented('Native toolbar transitions require iOS'); }

@@ -91,6 +91,10 @@ import Capacitor
     try capUIView?.setToolbarItems(items, options: options)
   }
   
+  func toolbarItem(tag: Int) -> UIBarButtonItem? {
+    capUIView?.toolbarItem(tag: tag)
+  }
+
   public func setTopToolbarItems(_ items: JSArray, options: JSObject) throws {
     try capUIView?.setTopToolbarItems(items, options: options)
   }

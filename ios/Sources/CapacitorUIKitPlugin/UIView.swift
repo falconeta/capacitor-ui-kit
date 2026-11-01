@@ -821,6 +821,11 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         pluginDelegate?.notifyListeners("onToolbarMenuActionButtonDidTap", data: ["identifier": action.identifier.rawValue])
     }
     
+    func toolbarItem(tag: Int) -> UIBarButtonItem? {
+        (leadingPageItems + trailingPageItems + (topToolbar?.items ?? []) + (toolbar?.items ?? []))
+            .first { $0.tag == tag && $0.isEnabled }
+    }
+
     @objc func didTap(_ sender: UIBarButtonItem) {
         pluginDelegate?.notifyListeners("onToolbarButtonDidTap", data: ["tag": sender.tag])
     }
@@ -920,6 +925,10 @@ public class CapUIView {
         try capUITabBarController.setToolItems(items, options: options)
     }
     
+    func toolbarItem(tag: Int) -> UIBarButtonItem? {
+        capUITabBarController.toolbarItem(tag: tag)
+    }
+
     func setTopToolbarItems(_ items: JSArray, options: JSObject) throws {
         try capUITabBarController.setTopToolItems(items, options: options)
     }

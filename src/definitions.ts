@@ -143,7 +143,74 @@ export interface TopToolbarTransition {
   duration: number;
 }
 
+export interface NativeActionSheetSource {
+  x: number; y: number; width: number; height: number;
+  viewportWidth: number; viewportHeight: number;
+}
+
+export interface NativeDialogOptions {
+  /** Tag of the real native toolbar item that initiated this sheet. */
+  sourceItemTag?: number;
+  source?: NativeActionSheetSource;
+  id: string;
+  style: 'alert' | 'actionSheet';
+  appearance?: 'light' | 'dark' | 'automatic';
+  title?: string;
+  message?: string;
+  tintColor?: string;
+  backdropDismiss?: boolean;
+  buttons: { id: string; title: string; role?: 'default' | 'cancel' | 'destructive'; preferred?: boolean; disabled?: boolean }[];
+}
+export interface NativeDialogResult { buttonId?: string; role: string; }
+
+export interface NativeWebSheetOptions {
+  /** Consumer-owned colors (#RRGGBB or #RRGGBBAA); no palette is imposed. */
+  backgroundColor?: string;
+  headerBackgroundColor?: string;
+  headerTranslucent?: boolean;
+  closeButtonVisible?: boolean;
+  detents?: ('medium' | 'large')[];
+  initialDetent?: 'medium' | 'large';
+  /** Opaque transport identity, unrelated to the document's business data. */
+  sessionId: string;
+  appearance?: 'light' | 'dark' | 'automatic';
+  tintColor?: string;
+  grabberVisible?: boolean;
+  dismissible?: boolean;
+  /** Notify the document before closing; never blocks past closeTimeout. */
+  notifyBeforeClose?: boolean;
+  /** Maximum grace period in milliseconds (500–10000, default 3000). */
+  closeTimeout?: number;
+  title: string;
+  closeTitle: string;
+  /** Data injected before the isolated document starts. No authentication is copied. */
+  data: Record<string, unknown>;
+}
+
+export interface NativeToastOptions {
+  id: string;
+  header?: string;
+  message?: string;
+  duration?: number;
+  swipeGesture?: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+  messageColor?: string;
+  buttons?: { text: string }[];
+}
+
 export interface CapacitorUIKitPlugin extends Plugin {
+  /** Show a non-blocking banner above presented UIKit controllers in the app scene. */
+  presentToast(options: NativeToastOptions): Promise<void>;
+  dismissToast(options: { id: string; role?: string }): Promise<void>;
+  dismissWebSheet(options: { sessionId: string; force?: boolean }): Promise<void>;
+  /** Reply only to an action from the currently presented sheet. */
+  completeWebSheetAction(options: { sheetId: string; requestId: number; result?: Record<string, unknown>; error?: string }): Promise<void>;
+  /** Present the app document in an isolated UIKit sheet; resolves on dismissal. */
+  presentActionSheet(options: Omit<NativeDialogOptions, 'style'>): Promise<NativeDialogResult>;
+  presentDialog(options: NativeDialogOptions): Promise<NativeDialogResult>;
+  dismissDialog(options: { id: string }): Promise<{ dismissed: boolean }>;
+  presentWebSheet(options: NativeWebSheetOptions): Promise<{ role: 'close' | 'gesture' }>;
   /** Register before initialize/createTabBar to receive the first adaptive layout. */
   addListener(eventName: 'onTopToolbarLayoutChange', listenerFunc: (layout: { placement: 'hidden' | 'top' | 'left' | 'right'; verticalEdge: 'none' | 'left' | 'right' }) => void): Promise<PluginListenerHandle>;
   addListener(eventName: 'onTabBarLayoutChange', listenerFunc: (layout: TabBarLayout) => void): Promise<PluginListenerHandle>;
