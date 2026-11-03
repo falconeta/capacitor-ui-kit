@@ -289,9 +289,21 @@ final class NativeWebSheetViewController: UIViewController, WKScriptMessageHandl
         guard !dismissalStarted else { return }
         dismissalStarted = true
         closeWatchdog?.cancel()
+        closePresentedNavigation()
+    }
+
+    private func closePresentedNavigation() {
+        guard !finished else { return }
         guard let navigation = navigationController, navigation.presentingViewController != nil else { complete("close"); return }
+        // UIKit can ignore a dismiss issued during the presentation animation.
+        if navigation.isBeingPresented {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in self?.closePresentedNavigation() }
+            return
+        }
         navigation.dismiss(animated: true) { [weak self] in self?.complete("close") }
     }
+
+    func presentationFailed(_ message: String) { fail(message) }
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) { complete("gesture") }
 

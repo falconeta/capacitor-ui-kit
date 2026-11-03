@@ -75,6 +75,9 @@ import Capacitor
   public func beginTopToolbarTransition(_ id: Int, source: JSObject, target: JSObject, backwards: Bool, duration: TimeInterval) throws -> TimeInterval {
     return try capUIView?.beginTopToolbarTransition(id, source: source, target: target, backwards: backwards, duration: duration) ?? duration
   }
+  public func topToolbarTopInset() -> Double {
+    Double(capUIView?.topToolbarTopInset() ?? 0)
+  }
   public func updateTopToolbarTransition(_ id: Int, progress: CGFloat) {
     capUIView?.updateTopToolbarTransition(id, progress: progress)
   }

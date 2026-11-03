@@ -66,11 +66,13 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
     private var navigationTransition: ToolbarNavigationTransition?
     private var deferredContainerUpdates: [() -> Void] = []
     private var pageToolbarVisible = false
+    private var pageToolbarTransparent = false
     private var leadingPageItems: [UIBarButtonItem] = []
     private var trailingPageItems: [UIBarButtonItem] = []
     private var hasAppTabs = false
     private var previousTopToolbarPlacement: String?
     private var previousTopToolbarEdge: String?
+    private var previousTopToolbarInset: CGFloat?
     private var requestedTabBarVisible = true
     private var placement = "automatic"
     private var previousInsets: TabBarContentInsets?
@@ -89,7 +91,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
             let leading = navigation.topViewController?.navigationItem.leadingItemGroups.flatMap { $0.barButtonItems } ?? []
             let trailing = navigation.topViewController?.navigationItem.trailingItemGroups.flatMap { $0.barButtonItems } ?? []
             if navigation !== managedNavigationController || navigation.isNavigationBarHidden == visible ||
-                navigation.topViewController?.hidesBottomBarWhenPushed != !hasVisibleTabs ||
+                navigation.topViewController?.hidesBottomBarWhenPushed == true ||
                 leading != (visible ? leadingPageItems : []) || trailing != (visible ? trailingPageItems : []) {
                 applyManagedPageNavigation()
             }
@@ -411,6 +413,8 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         let targetOptions = target["options"] as? JSObject ?? [:]
         let sourceTabsVisible = requestedTabBarVisible
         let targetTabsVisible = targetOptions["tabBarVisible"] as? Bool ?? sourceTabsVisible
+        let sourceTransparent = pageToolbarTransparent
+        let targetTransparent = targetOptions["transparentBackground"] as? Bool ?? false
         let sourceAppearance = overrideUserInterfaceStyle
         let targetAppearance = interfaceStyle(targetOptions["appearance"] as? String)
         let split = targetItems.firstIndex { ($0 as? JSObject)?["type"] as? Int == 1 }
@@ -421,8 +425,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
             sourceLeading: leadingPageItems, sourceTrailing: trailingPageItems,
             targetLeading: leading, targetTrailing: trailing,
             sourceVisible: pageToolbarVisible, targetVisible: visible, backwards: backwards,
-            sourceTabsVisible: sourceTabsVisible && hasAppTabs,
-            targetTabsVisible: targetTabsVisible && hasAppTabs)
+            targetTransparent: targetTransparent)
         transition.onWillShow = { [weak self] isTarget, animated in
             guard let self else { return }
             self.overrideUserInterfaceStyle = isTarget ? targetAppearance : sourceAppearance
@@ -435,6 +438,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
             self.leadingPageItems = completed ? transition.targetLeading : transition.sourceLeading
             self.trailingPageItems = completed ? transition.targetTrailing : transition.sourceTrailing
             self.pageToolbarVisible = completed ? transition.targetVisible : transition.sourceVisible
+            self.pageToolbarTransparent = completed ? targetTransparent : sourceTransparent
             self.navigationTransition = nil
             self.overrideUserInterfaceStyle = completed ? targetAppearance : sourceAppearance
             self.requestedTabBarVisible = completed ? targetTabsVisible : sourceTabsVisible
@@ -449,7 +453,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
             operations.forEach { $0() }
         }
         navigationTransition = transition
-        return transition.begin()
+        return transition.begin(maxDuration: duration)
     }
 
     func updateTopToolbarTransition(_ id: Int, progress: CGFloat) {
@@ -466,6 +470,7 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         updatingPageItems = true
         defer { updatingPageItems = false }
         adaptiveTopToolbar = true
+        pageToolbarTransparent = options["transparentBackground"] as? Bool ?? false
         if let appearance = options["appearance"] as? String {
             overrideUserInterfaceStyle = interfaceStyle(appearance)
         }
@@ -535,14 +540,31 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         guard let navigation = target, let content = navigation.topViewController else { return }
         let visible = pageToolbarVisible && (!leadingPageItems.isEmpty || !trailingPageItems.isEmpty)
         navigation.navigationBar.tintAdjustmentMode = .normal
-        // A restored page can reuse a controller previously showing a detail.
-        // Keep its automatic tab policy aligned with the committed bar state.
-        content.hidesBottomBarWhenPushed = !hasVisibleTabs
+        // Visibility belongs to setTabBarHidden, not to this synthetic stack.
+        // Keeping two UIKit policies can leave tabs hidden after a root replace.
+        content.hidesBottomBarWhenPushed = false
+        content.navigationItem.applyTransparentBarBackground(pageToolbarTransparent)
         content.navigationItem.leftItemsSupplementBackButton = false
         content.navigationItem.leadingItemGroups = visible && !leadingPageItems.isEmpty ? [UIBarButtonItemGroup(barButtonItems: leadingPageItems, representativeItem: nil)] : []
         content.navigationItem.trailingItemGroups = visible && !trailingPageItems.isEmpty ? [UIBarButtonItemGroup(barButtonItems: trailingPageItems, representativeItem: nil)] : []
         navigation.setNavigationBarHidden(!visible, animated: false)
         view.setNeedsLayout()
+    }
+
+    func topToolbarTopInset() -> CGFloat {
+        guard adaptiveTopToolbar, let navigation = selectedPageNavigation,
+              !navigation.isNavigationBarHidden, let item = navigation.topViewController?.navigationItem else { return 0 }
+        let items = (item.leadingItemGroups + item.trailingItemGroups).flatMap { $0.barButtonItems }
+        let hasHorizontalItem = items.contains { item in
+            if let custom = item.customView, custom.window != nil, !custom.isHidden { return true }
+            if #available(iOS 27.1, *) { return item.axisBehavior == .horizontalOnly }
+            return false
+        }
+        guard hasHorizontalItem else { return 0 }
+        // A vertical toolbar can coexist with a horizontal text control. Reserve
+        // the whole native bar band, including the Glass background's clearance.
+        let frame = navigation.navigationBar.convert(navigation.navigationBar.bounds, to: view)
+        return max(0, frame.maxY.rounded(.up))
     }
 
     func publishTopToolbarLayout(force: Bool = false) {
@@ -551,10 +573,12 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
             (!leadingPageItems.isEmpty || !trailingPageItems.isEmpty) : topToolbar != nil)
         let placement = visible ? (adaptiveTopToolbar ? (verticalPlacement ?? "top") : "top") : "hidden"
         let edge = verticalPlacement ?? "none"
-        guard force || placement != previousTopToolbarPlacement || edge != previousTopToolbarEdge else { return }
+        let topInset = visible ? topToolbarTopInset() : 0
+        guard force || placement != previousTopToolbarPlacement || edge != previousTopToolbarEdge || topInset != previousTopToolbarInset else { return }
         previousTopToolbarPlacement = placement
         previousTopToolbarEdge = edge
-        pluginDelegate?.notifyListeners("onTopToolbarLayoutChange", data: ["placement": placement, "verticalEdge": edge])
+        previousTopToolbarInset = topInset
+        pluginDelegate?.notifyListeners("onTopToolbarLayoutChange", data: ["placement": placement, "verticalEdge": edge, "topInset": Double(topInset)])
     }
 
     private func layoutTopToolbar(_ tb: UIToolbar, options: JSObject) {
@@ -656,7 +680,16 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
             afterTopToolbarTransition { [weak self] in self?.setRequestedTabBarVisible(visible) }
             return
         }
-        guard requestedTabBarVisible != visible else { return }
+        guard requestedTabBarVisible != visible else {
+            // UIKit may have hidden/recreated a bar while a native cover was up.
+            // Reassert the same intent without replaying a fade animation.
+            UIView.performWithoutAnimation {
+                self.updateTabBarVisibility()
+                self.applyManagedPageNavigation()
+                self.view.layoutIfNeeded()
+            }
+            return
+        }
         let change = {
             self.requestedTabBarVisible = visible
             self.updateTabBarVisibility()
@@ -673,6 +706,23 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
         self.viewControllers = []
     }
     
+    private func truncatedToolbarText(_ text: String, font: UIFont, width: CGFloat) -> String {
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        guard (text as NSString).size(withAttributes: attributes).width > width else { return text }
+        // UIKit's overflow decision may inspect the configuration text before
+        // applying the custom view's constraints. Bound that text as well, while
+        // retaining the complete consumer string in the accessibility label.
+        let characters = Array(text)
+        var lower = 0, upper = characters.count
+        while lower < upper {
+            let middle = (lower + upper + 1) / 2
+            let candidate = String(characters.prefix(middle)) + "…"
+            if (candidate as NSString).size(withAttributes: attributes).width <= width { lower = middle }
+            else { upper = middle - 1 }
+        }
+        return String(characters.prefix(lower)) + "…"
+    }
+
     private func createToolbarItems(from items: JSArray, options: JSObject) throws -> [UIBarButtonItem] {
         var uiItems: [UIBarButtonItem] = []
         
@@ -701,7 +751,9 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
                 buttonItem.identifier = data["identifier"] as? String
                 buttonItem.isEnabled = data["enabled"] as? Bool ?? true
                 buttonItem.accessibilityLabel = data["title"] as? String
-                if buttonItem.image == nil { buttonItem.title = data["title"] as? String }
+                // UIKit uses the title when an icon item moves into overflow.
+                // An accessibility label alone leaves that menu row without text.
+                buttonItem.title = data["title"] as? String
                 
                 if(tintColor != "") {
                     buttonItem.tintColor = UIColor.dynamic(light: tintColor, dark: tintColorDark)
@@ -732,6 +784,65 @@ class CapUITabBarController: UITabBarController, UITabBarControllerDelegate {
                     menu: UIMenu(title: menuTitle, children: try getMenuItem(items: menuItems, imageBasePath: imageBasePath))
                 )
                 
+                if let subtitle = data["subtitle"] as? String {
+                    // The item supplies the Glass background; the button supplies
+                    // accessible native text and menu interaction, with no second material.
+                    var configuration = UIButton.Configuration.plain()
+                    let maximumWidth = max(120, min(320, view.bounds.width - view.safeAreaInsets.left - view.safeAreaInsets.right - 120))
+                    let titleFont = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: UIFont.systemFont(ofSize: 15, weight: .semibold))
+                    let subtitleFont = UIFont.preferredFont(forTextStyle: .caption2)
+                    let menuImage = getImage(named: image, imageBasePath: imageBasePath)?.withRenderingMode(.alwaysTemplate)
+                    let textWidth = maximumWidth - 24 - (menuImage == nil ? 0 : menuImage!.size.width + 6)
+                    configuration.title = truncatedToolbarText(title, font: titleFont, width: textWidth)
+                    configuration.subtitle = truncatedToolbarText(subtitle, font: subtitleFont, width: textWidth)
+                    configuration.titleAlignment = .leading
+                    configuration.titleLineBreakMode = .byTruncatingTail
+                    configuration.subtitleLineBreakMode = .byTruncatingTail
+                    configuration.titlePadding = 1
+                    configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12)
+                    configuration.image = menuImage
+                    configuration.imagePlacement = .trailing
+                    configuration.imagePadding = 6
+                    configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+                        var attributes = attributes
+                        attributes.font = titleFont
+                        return attributes
+                    }
+                    let subtitleColor = data["subtitleTintColor"] as? String
+                    configuration.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+                        var attributes = attributes
+                        attributes.font = subtitleFont
+                        if let subtitleColor { attributes.foregroundColor = UIColor(hex: subtitleColor) }
+                        return attributes
+                    }
+                    let button = NativeToolbarMenuButton(configuration: configuration)
+                    button.menu = actionButton.menu
+                    button.showsMenuAsPrimaryAction = true
+                    button.isEnabled = data["enabled"] as? Bool ?? true
+                    button.accessibilityLabel = title
+                    button.accessibilityValue = subtitle
+                    button.accessibilityIdentifier = data["identifier"] as? String
+                    button.titleLabel?.adjustsFontForContentSizeCategory = true
+                    button.subtitleLabel?.adjustsFontForContentSizeCategory = true
+                    if tintColor != "" { button.tintColor = UIColor.dynamic(light: tintColor, dark: tintColorDark) }
+                    button.maximumContentWidth = maximumWidth
+                    button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                    button.sizeToFit()
+                    button.widthAnchor.constraint(equalToConstant: button.intrinsicContentSize.width).isActive = true
+                    actionButton.customView = button
+                    // The custom view owns the text. Leaving the full title on
+                    // the item makes UIKit measure that title again for overflow.
+                    actionButton.title = nil
+                    actionButton.image = nil
+                    actionButton.sharesBackground = false
+                }
+                if #available(iOS 27.1, *) {
+                    switch data["axisBehavior"] as? String {
+                    case "horizontalOnly": actionButton.axisBehavior = .horizontalOnly
+                    case "verticalPreferred": actionButton.axisBehavior = .verticalPreferred
+                    default: actionButton.axisBehavior = .automatic
+                    }
+                }
                 actionButton.identifier = data["identifier"] as? String
                 actionButton.isEnabled = data["enabled"] as? Bool ?? true
                 actionButton.accessibilityLabel = title
@@ -929,6 +1040,11 @@ public class CapUIView {
         capUITabBarController.toolbarItem(tag: tag)
     }
 
+    func topToolbarTopInset() -> CGFloat {
+        capUITabBarController.view.layoutIfNeeded()
+        return capUITabBarController.topToolbarTopInset()
+    }
+
     func setTopToolbarItems(_ items: JSArray, options: JSObject) throws {
         try capUITabBarController.setTopToolItems(items, options: options)
     }
@@ -1014,5 +1130,24 @@ extension UIColor {
         return UIColor { trait in
             trait.userInterfaceStyle == .dark ? darkColor : lightColor
         }
+    }
+}
+
+/// Bound the size UIKit uses to place a text menu item. A constraint alone does
+/// not change UIButton's intrinsic width, so long labels could be moved to overflow.
+@available(iOS 26.0, *)
+private final class NativeToolbarMenuButton: UIButton {
+    var maximumContentWidth: CGFloat = 320 {
+        didSet { invalidateIntrinsicContentSize() }
+    }
+    override var intrinsicContentSize: CGSize {
+        var size = super.intrinsicContentSize
+        size.width = min(size.width, maximumContentWidth)
+        return size
+    }
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        var result = super.sizeThatFits(size)
+        result.width = min(result.width, maximumContentWidth)
+        return result
     }
 }

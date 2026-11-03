@@ -18,8 +18,6 @@ final class ToolbarNavigationTransition: NSObject, UINavigationControllerDelegat
     var onComplete: ((Bool) -> Void)?
     private weak var previousDelegate: UINavigationControllerDelegate?
     private let backwards: Bool
-    private let sourceTabsVisible: Bool
-    private let targetTabsVisible: Bool
     private var immediateVisibility: Bool { !sourceVisible }
     private var requestedCompletion: Bool?
     private var nativeCompleted = false
@@ -28,12 +26,12 @@ final class ToolbarNavigationTransition: NSObject, UINavigationControllerDelegat
     private var completion: (() -> Void)?
     private weak var contentContainer: UIView?
     private var contentAlpha: CGFloat = 1
+    private var timedAnimator: ToolbarCommitAnimator?
 
     init(id: Int, navigation: UINavigationController,
          sourceLeading: [UIBarButtonItem], sourceTrailing: [UIBarButtonItem],
          targetLeading: [UIBarButtonItem], targetTrailing: [UIBarButtonItem],
-         sourceVisible: Bool, targetVisible: Bool, backwards: Bool,
-         sourceTabsVisible: Bool, targetTabsVisible: Bool) {
+         sourceVisible: Bool, targetVisible: Bool, backwards: Bool, targetTransparent: Bool) {
         self.id = id
         self.navigation = navigation
         self.source = navigation.topViewController!
@@ -45,27 +43,31 @@ final class ToolbarNavigationTransition: NSObject, UINavigationControllerDelegat
         self.sourceVisible = sourceVisible
         self.targetVisible = targetVisible
         self.backwards = backwards
-        self.sourceTabsVisible = sourceTabsVisible
-        self.targetTabsVisible = targetTabsVisible
         super.init()
         target.view.backgroundColor = .clear
         target.view.isOpaque = false
         source.view.isOpaque = false
         target.navigationItem.hidesBackButton = true
+        target.navigationItem.applyTransparentBarBackground(targetTransparent)
         target.navigationItem.leadingItemGroups = targetVisible && !targetLeading.isEmpty ? [UIBarButtonItemGroup(barButtonItems: targetLeading, representativeItem: nil)] : []
         target.navigationItem.trailingItemGroups = targetVisible && !targetTrailing.isEmpty ? [UIBarButtonItemGroup(barButtonItems: targetTrailing, representativeItem: nil)] : []
-        source.hidesBottomBarWhenPushed = !sourceTabsVisible
-        target.hidesBottomBarWhenPushed = !targetTabsVisible
+        // The tab controller explicitly owns visibility. A second policy on
+        // navigation placeholders can hide tabs again during a root replacement.
+        source.hidesBottomBarWhenPushed = false
+        target.hidesBottomBarWhenPushed = false
     }
 
-    func begin() -> TimeInterval {
+    func begin(maxDuration: TimeInterval) -> TimeInterval {
         previousDelegate = navigation.delegate
         if immediateVisibility {
             // Showing a previously absent bar must not slide it in vertically.
             // Disappearance instead uses the native transition to empty items.
             UIView.performWithoutAnimation {
-                source.hidesBottomBarWhenPushed = !targetTabsVisible
                 onWillShow?(true, false)
+                source.navigationItem.standardAppearance = target.navigationItem.standardAppearance
+                source.navigationItem.scrollEdgeAppearance = target.navigationItem.scrollEdgeAppearance
+                source.navigationItem.compactAppearance = target.navigationItem.compactAppearance
+                source.navigationItem.compactScrollEdgeAppearance = target.navigationItem.compactScrollEdgeAppearance
                 source.navigationItem.leadingItemGroups = targetVisible && !targetLeading.isEmpty ? [UIBarButtonItemGroup(barButtonItems: targetLeading, representativeItem: nil)] : []
                 source.navigationItem.trailingItemGroups = targetVisible && !targetTrailing.isEmpty ? [UIBarButtonItemGroup(barButtonItems: targetTrailing, representativeItem: nil)] : []
                 navigation.setNavigationBarHidden(!targetVisible, animated: false)
@@ -73,6 +75,12 @@ final class ToolbarNavigationTransition: NSObject, UINavigationControllerDelegat
             }
             nativeCompleted = true
             return 0
+        }
+        // A short trailing commit needs an explicit transition duration. UIKit
+        // uses the animator's duration for its own navigation bar morph too.
+        // Ordinary push/pop keep the standard system animator.
+        if maxDuration > 0 && maxDuration < 0.35 {
+            timedAnimator = ToolbarCommitAnimator(duration: maxDuration)
         }
         navigation.delegate = self
         navigation.setViewControllers(backwards ? [target, source] : [source], animated: false)
@@ -140,18 +148,26 @@ final class ToolbarNavigationTransition: NSObject, UINavigationControllerDelegat
             source.navigationItem.trailingItemGroups = []
             target.navigationItem.leadingItemGroups = []
             target.navigationItem.trailingItemGroups = []
-        } else if immediateVisibility {
-            source.hidesBottomBarWhenPushed = !(completed ? targetTabsVisible : sourceTabsVisible)
-        } else {
+        } else if !immediateVisibility {
             let destination = completed ? target : source
-            if navigation.topViewController !== destination {
-                navigation.setViewControllers([destination], animated: false)
+            // These controllers model one web transition, not the web history.
+            // Drop the temporary source even when the destination is already on
+            // top: a hidden-bottom-bar policy below it can keep UIKit's tabs hidden.
+            if navigation.viewControllers.count != 1 || navigation.topViewController !== destination {
+                UIView.performWithoutAnimation {
+                    navigation.setViewControllers([destination], animated: false)
+                }
             }
         }
         onComplete?(completed)
         let resolved = completion
         completion = nil
         resolved?()
+    }
+
+    func navigationController(_ navigationController: UINavigationController, animationControllerFor operation: UINavigationController.Operation,
+                              from fromVC: UIViewController, to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        timedAnimator
     }
 
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
@@ -167,5 +183,42 @@ final class ToolbarNavigationTransition: NSObject, UINavigationControllerDelegat
         nativeCompleted = true
         restoreTransitionContent()
         if let requestedCompletion { settle(requestedCompletion) }
+    }
+}
+
+/// The web page is already at its destination. Animate only the transparent
+/// native placeholder; UIKit continues to draw and morph its navigation items.
+@available(iOS 26.0, *)
+private final class ToolbarCommitAnimator: NSObject, UIViewControllerAnimatedTransitioning {
+    let duration: TimeInterval
+    init(duration: TimeInterval) { self.duration = duration }
+    func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval { duration }
+    func animateTransition(using context: UIViewControllerContextTransitioning) {
+        guard let controller = context.viewController(forKey: .to), let view = context.view(forKey: .to) else {
+            context.completeTransition(false)
+            return
+        }
+        view.frame = context.finalFrame(for: controller)
+        context.containerView.addSubview(view)
+        view.alpha = 0
+        UIView.animate(withDuration: duration, delay: 0, options: .curveEaseInOut, animations: {
+            view.alpha = 1
+        }, completion: { _ in context.completeTransition(!context.transitionWasCancelled) })
+    }
+}
+
+@available(iOS 26.0, *)
+extension UINavigationItem {
+    func applyTransparentBarBackground(_ transparent: Bool) {
+        let appearance: UINavigationBarAppearance?
+        if transparent {
+            let clear = UINavigationBarAppearance()
+            clear.configureWithTransparentBackground()
+            appearance = clear
+        } else { appearance = nil }
+        standardAppearance = appearance
+        scrollEdgeAppearance = appearance
+        compactAppearance = appearance
+        compactScrollEdgeAppearance = appearance
     }
 }

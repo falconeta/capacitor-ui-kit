@@ -107,6 +107,11 @@ export interface ToolbarItemData {
     image?: string;
     title?: string;
     menuTitle?: string;
+    /** A two-line native label inside the item's system Glass background. */
+    subtitle?: string;
+    subtitleTintColor?: string;
+    /** Keep text controls horizontal when UIKit places other actions vertically. */
+    axisBehavior?: 'automatic' | 'horizontalOnly' | 'verticalPreferred';
     tintColor?: string;
     tintColorDark?: string;
     items: ToolbarMenuItem<ToolbarMenuItemType>[];
@@ -114,6 +119,8 @@ export interface ToolbarItemData {
 }
 
 export interface ToolbarOptions {
+  /** Clear the navigation bar canvas while preserving the system Glass item backgrounds. */
+  transparentBackground?: boolean;
   /** Native material scheme of the destination web header, applied at willShow. */
   appearance?: 'automatic' | 'light' | 'dark';
   /** Destination tab visibility, committed with the page transition and restored on cancellation. */
@@ -212,10 +219,10 @@ export interface CapacitorUIKitPlugin extends Plugin {
   dismissDialog(options: { id: string }): Promise<{ dismissed: boolean }>;
   presentWebSheet(options: NativeWebSheetOptions): Promise<{ role: 'close' | 'gesture' }>;
   /** Register before initialize/createTabBar to receive the first adaptive layout. */
-  addListener(eventName: 'onTopToolbarLayoutChange', listenerFunc: (layout: { placement: 'hidden' | 'top' | 'left' | 'right'; verticalEdge: 'none' | 'left' | 'right' }) => void): Promise<PluginListenerHandle>;
+  addListener(eventName: 'onTopToolbarLayoutChange', listenerFunc: (layout: { placement: 'hidden' | 'top' | 'left' | 'right'; verticalEdge: 'none' | 'left' | 'right'; /** Bottom of horizontal native controls in WebView points, including top clearance. */ topInset?: number }) => void): Promise<PluginListenerHandle>;
   addListener(eventName: 'onTabBarLayoutChange', listenerFunc: (layout: TabBarLayout) => void): Promise<PluginListenerHandle>;
   addListener(eventName: string, listenerFunc: ListenerCallback): Promise<PluginListenerHandle>;
-  beginTopToolbarTransition(options: TopToolbarTransition): Promise<{ duration: number; timing: 'native' }>;
+  beginTopToolbarTransition(options: TopToolbarTransition): Promise<{ duration: number; timing: 'native'; topInset?: number }>;
   /** Compatibility entry point; native timing mode keeps UIKit in control of its morph spring. */
   updateTopToolbarTransition(options: { id: number; progress: number }): Promise<void>;
   finishTopToolbarTransition(options: { id: number; completed: boolean }): Promise<void>;

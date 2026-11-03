@@ -83,6 +83,28 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    private func showWebSheet(_ content: NativeWebSheetViewController, navigation: UINavigationController,
+                              root: UIViewController, attempt: Int = 0) {
+        guard webSheet === content else { return }
+        var presenter = root
+        while let next = presenter.presentedViewController, !next.isBeingDismissed { presenter = next }
+        // A browser or another native cover may be visible over the bridge.
+        // Wait for its UIKit transition, and present above the visible controller.
+        guard presenter.viewIfLoaded?.window != nil, !presenter.isBeingPresented,
+              !presenter.isBeingDismissed, !(presenter is UIAlertController) else {
+            guard attempt < 100 else { content.presentationFailed("Native sheet presenter is no longer available"); return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self, weak root] in
+                guard let self, let root else { return }
+                self.showWebSheet(content, navigation: navigation, root: root, attempt: attempt + 1)
+            }
+            return
+        }
+        presenter.present(navigation, animated: true) { [weak self] in
+            guard self?.webSheet === content else { return }
+            self?.notifyListeners("onWebSheetPresent", data: ["sessionId": content.sessionId, "sheetId": content.sheetId])
+        }
+    }
+
     @objc func presentDialog(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             self.dialogs.present(JSTypes.coerceDictionaryToJSObject(call.options) ?? [:], presenter: { [weak self] in self?.bridge?.viewController },
@@ -138,7 +160,6 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             guard self.webSheet == nil else { call.reject("A native web sheet is already open"); return }
             guard let bridge = self.bridge, let presenter = bridge.viewController,
-                  presenter.presentedViewController == nil,
                   let data = call.getObject("data") else {
                 call.reject("Native web sheet cannot be presented")
                 return
@@ -168,18 +189,16 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
             content.onError = { [weak self] event in self?.notifyListeners("onWebSheetError", data: event) }
             self.webSheet = content
             content.onReady = { [weak self, weak presenter, weak navigation] in
-                guard let self, let presenter, let navigation,
-                      presenter.presentedViewController == nil, presenter.view.window != nil else {
-                    self?.webSheet = nil
-                    call.reject("Native sheet presenter is no longer available")
-                    return
-                }
-                presenter.present(navigation, animated: true) { [weak self] in
-                    self?.notifyListeners("onWebSheetPresent", data: ["sessionId": content.sessionId, "sheetId": content.sheetId])
-                }
+                guard let self, let presenter, let navigation else { return }
+                self.showWebSheet(content, navigation: navigation, root: presenter)
             }
             content.onFailure = { [weak self] error in self?.webSheet = nil; call.reject(error) }
-            content.onDismiss = { [weak self] role in self?.webSheet = nil; call.resolve(["role": role]) }
+            let dismissedSessionId = content.sessionId, dismissedSheetId = content.sheetId
+            content.onDismiss = { [weak self] role in
+                self?.webSheet = nil
+                self?.notifyListeners("onWebSheetDismiss", data: ["sessionId": dismissedSessionId, "sheetId": dismissedSheetId, "role": role])
+                call.resolve(["role": role])
+            }
             // Retain the navigation controller while loading offscreen. UIKit
             // takes ownership on presentation; the closure is cleared on ready.
             let ready = content.onReady
@@ -199,7 +218,9 @@ public class CapacitorUIKitPlugin: CAPPlugin, CAPBridgedPlugin {
                     backwards: call.getString("direction") == "back", duration: (call.getDouble("duration") ?? 540) / 1000)
                 // UIKit owns its standard spring/morph. Let the web page use
                 // the same duration without pausing native material rendering.
-                DispatchQueue.main.async { call.resolve(["duration": nativeDuration * 1000, "timing": "native"]) }
+                DispatchQueue.main.async {
+                    call.resolve(["duration": nativeDuration * 1000, "timing": "native", "topInset": self.implementation.topToolbarTopInset()])
+                }
             } catch { call.reject(error.localizedDescription) }
         }
     }

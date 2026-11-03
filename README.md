@@ -82,9 +82,20 @@ native actions for that same page have actually been shown.
 
 <docgen-index>
 
+* [`presentToast(...)`](#presenttoast)
+* [`dismissToast(...)`](#dismisstoast)
+* [`dismissWebSheet(...)`](#dismisswebsheet)
+* [`completeWebSheetAction(...)`](#completewebsheetaction)
+* [`presentActionSheet(...)`](#presentactionsheet)
+* [`presentDialog(...)`](#presentdialog)
+* [`dismissDialog(...)`](#dismissdialog)
+* [`presentWebSheet(...)`](#presentwebsheet)
 * [`addListener('onTopToolbarLayoutChange', ...)`](#addlistenerontoptoolbarlayoutchange-)
 * [`addListener('onTabBarLayoutChange', ...)`](#addlistenerontabbarlayoutchange-)
 * [`addListener(string, ...)`](#addlistenerstring-)
+* [`beginTopToolbarTransition(...)`](#begintoptoolbartransition)
+* [`updateTopToolbarTransition(...)`](#updatetoptoolbartransition)
+* [`finishTopToolbarTransition(...)`](#finishtoptoolbartransition)
 * [`initialize()`](#initialize)
 * [`reRender()`](#rerender)
 * [`createTabBar(...)`](#createtabbar)
@@ -111,18 +122,136 @@ native actions for that same page have actually been shown.
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
+### presentToast(...)
+
+```typescript
+presentToast(options: NativeToastOptions) => Promise<void>
+```
+
+Show a non-blocking banner above presented UIKit controllers in the app scene.
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#nativetoastoptions">NativeToastOptions</a></code> |
+
+--------------------
+
+
+### dismissToast(...)
+
+```typescript
+dismissToast(options: { id: string; role?: string; }) => Promise<void>
+```
+
+| Param         | Type                                        |
+| ------------- | ------------------------------------------- |
+| **`options`** | <code>{ id: string; role?: string; }</code> |
+
+--------------------
+
+
+### dismissWebSheet(...)
+
+```typescript
+dismissWebSheet(options: { sessionId: string; force?: boolean; }) => Promise<void>
+```
+
+| Param         | Type                                                 |
+| ------------- | ---------------------------------------------------- |
+| **`options`** | <code>{ sessionId: string; force?: boolean; }</code> |
+
+--------------------
+
+
+### completeWebSheetAction(...)
+
+```typescript
+completeWebSheetAction(options: { sheetId: string; requestId: number; result?: Record<string, unknown>; error?: string; }) => Promise<void>
+```
+
+Reply only to an action from the currently presented sheet.
+
+| Param         | Type                                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ sheetId: string; requestId: number; result?: <a href="#record">Record</a>&lt;string, unknown&gt;; error?: string; }</code> |
+
+--------------------
+
+
+### presentActionSheet(...)
+
+```typescript
+presentActionSheet(options: Omit<NativeDialogOptions, 'style'>) => Promise<NativeDialogResult>
+```
+
+Present the app document in an isolated UIKit sheet; resolves on dismissal.
+
+| Param         | Type                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| **`options`** | <code><a href="#omit">Omit</a>&lt;<a href="#nativedialogoptions">NativeDialogOptions</a>, 'style'&gt;</code> |
+
+**Returns:** <code>Promise&lt;<a href="#nativedialogresult">NativeDialogResult</a>&gt;</code>
+
+--------------------
+
+
+### presentDialog(...)
+
+```typescript
+presentDialog(options: NativeDialogOptions) => Promise<NativeDialogResult>
+```
+
+| Param         | Type                                                                |
+| ------------- | ------------------------------------------------------------------- |
+| **`options`** | <code><a href="#nativedialogoptions">NativeDialogOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#nativedialogresult">NativeDialogResult</a>&gt;</code>
+
+--------------------
+
+
+### dismissDialog(...)
+
+```typescript
+dismissDialog(options: { id: string; }) => Promise<{ dismissed: boolean; }>
+```
+
+| Param         | Type                         |
+| ------------- | ---------------------------- |
+| **`options`** | <code>{ id: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ dismissed: boolean; }&gt;</code>
+
+--------------------
+
+
+### presentWebSheet(...)
+
+```typescript
+presentWebSheet(options: NativeWebSheetOptions) => Promise<{ role: 'close' | 'gesture'; }>
+```
+
+| Param         | Type                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| **`options`** | <code><a href="#nativewebsheetoptions">NativeWebSheetOptions</a></code> |
+
+**Returns:** <code>Promise&lt;{ role: 'close' | 'gesture'; }&gt;</code>
+
+--------------------
+
+
 ### addListener('onTopToolbarLayoutChange', ...)
 
 ```typescript
-addListener(eventName: 'onTopToolbarLayoutChange', listenerFunc: (layout: { placement: 'hidden' | 'top' | 'left' | 'right'; verticalEdge: 'none' | 'left' | 'right'; }) => void) => Promise<PluginListenerHandle>
+addListener(eventName: 'onTopToolbarLayoutChange', listenerFunc: (layout: { placement: 'hidden' | 'top' | 'left' | 'right'; verticalEdge: 'none' | 'left' | 'right'; topInset?: number; }) => void) => Promise<PluginListenerHandle>
 ```
 
 Register before initialize/createTabBar to receive the first adaptive layout.
 
-| Param              | Type                                                                                                                                |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **`eventName`**    | <code>'onTopToolbarLayoutChange'</code>                                                                                             |
-| **`listenerFunc`** | <code>(layout: { placement: 'hidden' \| 'top' \| 'left' \| 'right'; verticalEdge: 'left' \| 'right' \| 'none'; }) =&gt; void</code> |
+| Param              | Type                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`eventName`**    | <code>'onTopToolbarLayoutChange'</code>                                                                                                                |
+| **`listenerFunc`** | <code>(layout: { placement: 'hidden' \| 'top' \| 'left' \| 'right'; verticalEdge: 'left' \| 'right' \| 'none'; topInset?: number; }) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
@@ -157,6 +286,49 @@ addListener(eventName: string, listenerFunc: ListenerCallback) => Promise<Plugin
 | **`listenerFunc`** | <code><a href="#listenercallback">ListenerCallback</a></code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+--------------------
+
+
+### beginTopToolbarTransition(...)
+
+```typescript
+beginTopToolbarTransition(options: TopToolbarTransition) => Promise<{ duration: number; timing: 'native'; topInset?: number; }>
+```
+
+| Param         | Type                                                                  |
+| ------------- | --------------------------------------------------------------------- |
+| **`options`** | <code><a href="#toptoolbartransition">TopToolbarTransition</a></code> |
+
+**Returns:** <code>Promise&lt;{ duration: number; timing: 'native'; topInset?: number; }&gt;</code>
+
+--------------------
+
+
+### updateTopToolbarTransition(...)
+
+```typescript
+updateTopToolbarTransition(options: { id: number; progress: number; }) => Promise<void>
+```
+
+Compatibility entry point; native timing mode keeps UIKit in control of its morph spring.
+
+| Param         | Type                                           |
+| ------------- | ---------------------------------------------- |
+| **`options`** | <code>{ id: number; progress: number; }</code> |
+
+--------------------
+
+
+### finishTopToolbarTransition(...)
+
+```typescript
+finishTopToolbarTransition(options: { id: number; completed: boolean; }) => Promise<void>
+```
+
+| Param         | Type                                             |
+| ------------- | ------------------------------------------------ |
+| **`options`** | <code>{ id: number; completed: boolean; }</code> |
 
 --------------------
 
@@ -339,6 +511,79 @@ tabBarSelected() => Promise<{ value: number | undefined; }>
 ### Interfaces
 
 
+#### NativeToastOptions
+
+| Prop                  | Type                             |
+| --------------------- | -------------------------------- |
+| **`id`**              | <code>string</code>              |
+| **`header`**          | <code>string</code>              |
+| **`message`**         | <code>string</code>              |
+| **`duration`**        | <code>number</code>              |
+| **`swipeGesture`**    | <code>boolean</code>             |
+| **`backgroundColor`** | <code>string</code>              |
+| **`textColor`**       | <code>string</code>              |
+| **`messageColor`**    | <code>string</code>              |
+| **`buttons`**         | <code>{ text: string; }[]</code> |
+
+
+#### NativeDialogResult
+
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`buttonId`** | <code>string</code> |
+| **`role`**     | <code>string</code> |
+
+
+#### NativeDialogOptions
+
+| Prop                  | Type                                                                                                                                  | Description                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **`sourceItemTag`**   | <code>number</code>                                                                                                                   | Tag of the real native toolbar item that initiated this sheet. |
+| **`source`**          | <code><a href="#nativeactionsheetsource">NativeActionSheetSource</a></code>                                                           |                                                                |
+| **`id`**              | <code>string</code>                                                                                                                   |                                                                |
+| **`style`**           | <code>'alert' \| 'actionSheet'</code>                                                                                                 |                                                                |
+| **`appearance`**      | <code>'automatic' \| 'light' \| 'dark'</code>                                                                                         |                                                                |
+| **`title`**           | <code>string</code>                                                                                                                   |                                                                |
+| **`message`**         | <code>string</code>                                                                                                                   |                                                                |
+| **`tintColor`**       | <code>string</code>                                                                                                                   |                                                                |
+| **`backdropDismiss`** | <code>boolean</code>                                                                                                                  |                                                                |
+| **`buttons`**         | <code>{ id: string; title: string; role?: 'default' \| 'cancel' \| 'destructive'; preferred?: boolean; disabled?: boolean; }[]</code> |                                                                |
+
+
+#### NativeActionSheetSource
+
+| Prop                 | Type                |
+| -------------------- | ------------------- |
+| **`x`**              | <code>number</code> |
+| **`y`**              | <code>number</code> |
+| **`width`**          | <code>number</code> |
+| **`height`**         | <code>number</code> |
+| **`viewportWidth`**  | <code>number</code> |
+| **`viewportHeight`** | <code>number</code> |
+
+
+#### NativeWebSheetOptions
+
+| Prop                        | Type                                                             | Description                                                                     |
+| --------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **`backgroundColor`**       | <code>string</code>                                              | Consumer-owned colors (#RRGGBB or #RRGGBBAA); no palette is imposed.            |
+| **`headerBackgroundColor`** | <code>string</code>                                              |                                                                                 |
+| **`headerTranslucent`**     | <code>boolean</code>                                             |                                                                                 |
+| **`closeButtonVisible`**    | <code>boolean</code>                                             |                                                                                 |
+| **`detents`**               | <code>('medium' \| 'large')[]</code>                             |                                                                                 |
+| **`initialDetent`**         | <code>'medium' \| 'large'</code>                                 |                                                                                 |
+| **`sessionId`**             | <code>string</code>                                              | Opaque transport identity, unrelated to the document's business data.           |
+| **`appearance`**            | <code>'automatic' \| 'light' \| 'dark'</code>                    |                                                                                 |
+| **`tintColor`**             | <code>string</code>                                              |                                                                                 |
+| **`grabberVisible`**        | <code>boolean</code>                                             |                                                                                 |
+| **`dismissible`**           | <code>boolean</code>                                             |                                                                                 |
+| **`notifyBeforeClose`**     | <code>boolean</code>                                             | Notify the document before closing; never blocks past closeTimeout.             |
+| **`closeTimeout`**          | <code>number</code>                                              | Maximum grace period in milliseconds (500–10000, default 3000).                 |
+| **`title`**                 | <code>string</code>                                              |                                                                                 |
+| **`closeTitle`**            | <code>string</code>                                              |                                                                                 |
+| **`data`**                  | <code><a href="#record">Record</a>&lt;string, unknown&gt;</code> | Data injected before the isolated document starts. No authentication is copied. |
+
+
 #### PluginListenerHandle
 
 | Prop         | Type                                      |
@@ -354,6 +599,72 @@ Extra tab/sidebar occlusion after subtracting the system safe area. Values are U
 | --------------- | ---------------------------------------------------------------------------- |
 | **`placement`** | <code>'hidden' \| 'bottom' \| 'top' \| 'left' \| 'right' \| 'sidebar'</code> |
 | **`insets`**    | <code>{ top: number; right: number; bottom: number; left: number; }</code>   |
+
+
+#### TopToolbarTransition
+
+| Prop            | Type                                                              | Description                                                                              |
+| --------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **`id`**        | <code>number</code>                                               |                                                                                          |
+| **`from`**      | <code><a href="#createorsettoolbar">CreateOrSetToolbar</a></code> |                                                                                          |
+| **`to`**        | <code><a href="#createorsettoolbar">CreateOrSetToolbar</a></code> |                                                                                          |
+| **`direction`** | <code>'forward' \| 'back'</code>                                  |                                                                                          |
+| **`duration`**  | <code>number</code>                                               | Requested duration in milliseconds; UIKit reports the duration of its native transition. |
+
+
+#### CreateOrSetToolbar
+
+| Prop          | Type                                                                                                        |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| **`items`**   | <code><a href="#toolbaritem">ToolbarItem</a>&lt;<a href="#toolbaritemtype">ToolbarItemType</a>&gt;[]</code> |
+| **`options`** | <code><a href="#toolbaroptions">ToolbarOptions</a></code>                                                   |
+
+
+#### ToolbarItem
+
+| Prop       | Type                            |
+| ---------- | ------------------------------- |
+| **`type`** | <code>T</code>                  |
+| **`data`** | <code>ToolbarItemData[T]</code> |
+
+
+#### ToolbarItemData
+
+| Prop                                  | Type                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`[ToolbarItemType.Button]`**        | <code>{ identifier?: string; tag: number; enabled?: boolean; image?: string; title?: string; style?: <a href="#toolbarbuttonitemstyle">ToolbarButtonItemStyle</a>; tintColor?: string; tintColorDark?: string; }</code>                                                                                                                                                                               |
+| **`[ToolbarItemType.FlexibleSpace]`** | <code>void</code>                                                                                                                                                                                                                                                                                                                                                                                     |
+| **`[ToolbarItemType.Menu]`**          | <code>{ identifier?: string; enabled?: boolean; image?: string; title?: string; menuTitle?: string; subtitle?: string; subtitleTintColor?: string; axisBehavior?: 'automatic' \| 'horizontalOnly' \| 'verticalPreferred'; tintColor?: string; tintColorDark?: string; items: <a href="#toolbarmenuitem">ToolbarMenuItem</a>&lt;<a href="#toolbarmenuitemtype">ToolbarMenuItemType</a>&gt;[]; }</code> |
+
+
+#### ToolbarMenuItem
+
+| Prop       | Type                                |
+| ---------- | ----------------------------------- |
+| **`type`** | <code>T</code>                      |
+| **`data`** | <code>ToolbarMenuItemData[T]</code> |
+
+
+#### ToolbarMenuItemData
+
+| Prop                                  | Type                                                                                                                                                                          |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`[ToolbarMenuItemType.Action]`**    | <code>{ identifier: string; checked?: boolean; attributes?: ToolbarMenuItemAttributes[]; title?: string; image?: string; tintColor?: string; tintColorDark?: string; }</code> |
+| **`[ToolbarMenuItemType.Separator]`** | <code>void</code>                                                                                                                                                             |
+
+
+#### ToolbarOptions
+
+| Prop                        | Type                                                       | Description                                                                                                |
+| --------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **`transparentBackground`** | <code>boolean</code>                                       | Clear the navigation bar canvas while preserving the system Glass item backgrounds.                        |
+| **`appearance`**            | <code>'automatic' \| 'light' \| 'dark'</code>              | Native material scheme of the destination web header, applied at willShow.                                 |
+| **`tabBarVisible`**         | <code>boolean</code>                                       | Destination tab visibility, committed with the page transition and restored on cancellation.               |
+| **`visible`**               | <code>boolean</code>                                       | Commit visibility together with items, avoiding a hide/show gap.                                           |
+| **`animated`**              | <code>boolean</code>                                       | Animate an item change, respecting the system Reduce Motion setting.                                       |
+| **`adaptive`**              | <code>boolean</code>                                       | Use UINavigationController-managed bars so UIKit adapts them to iPhone Duo.                                |
+| **`imageBasePath`**         | <code>string</code>                                        |                                                                                                            |
+| **`position`**              | <code>{ top: number; left: number; right: number; }</code> | Non-adaptive top-toolbar offsets from the WebView edges, in UIKit points. Used for centered modal headers. |
 
 
 #### CreateTabBar
@@ -402,57 +713,35 @@ Extra tab/sidebar occlusion after subtracting the system safe area. Values are U
 | **`placeholder`** | <code>string</code> |
 
 
-#### CreateOrSetToolbar
-
-| Prop          | Type                                                                                                        |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| **`items`**   | <code><a href="#toolbaritem">ToolbarItem</a>&lt;<a href="#toolbaritemtype">ToolbarItemType</a>&gt;[]</code> |
-| **`options`** | <code><a href="#toolbaroptions">ToolbarOptions</a></code>                                                   |
-
-
-#### ToolbarItem
-
-| Prop       | Type                            |
-| ---------- | ------------------------------- |
-| **`type`** | <code>T</code>                  |
-| **`data`** | <code>ToolbarItemData[T]</code> |
-
-
-#### ToolbarItemData
-
-| Prop                                  | Type                                                                                                                                                                                                                                                       |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`[ToolbarItemType.Button]`**        | <code>{ tag: number; enabled?: boolean; image?: string; title?: string; style?: <a href="#toolbarbuttonitemstyle">ToolbarButtonItemStyle</a>; tintColor?: string; tintColorDark?: string; }</code>                                                         |
-| **`[ToolbarItemType.FlexibleSpace]`** | <code>void</code>                                                                                                                                                                                                                                          |
-| **`[ToolbarItemType.Menu]`**          | <code>{ enabled?: boolean; image?: string; title?: string; menuTitle?: string; tintColor?: string; tintColorDark?: string; items: <a href="#toolbarmenuitem">ToolbarMenuItem</a>&lt;<a href="#toolbarmenuitemtype">ToolbarMenuItemType</a>&gt;[]; }</code> |
-
-
-#### ToolbarMenuItem
-
-| Prop       | Type                                |
-| ---------- | ----------------------------------- |
-| **`type`** | <code>T</code>                      |
-| **`data`** | <code>ToolbarMenuItemData[T]</code> |
-
-
-#### ToolbarMenuItemData
-
-| Prop                                  | Type                                                                                                                                                       |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`[ToolbarMenuItemType.Action]`**    | <code>{ identifier: string; attributes?: ToolbarMenuItemAttributes[]; title?: string; image?: string; tintColor?: string; tintColorDark?: string; }</code> |
-| **`[ToolbarMenuItemType.Separator]`** | <code>void</code>                                                                                                                                          |
-
-
-#### ToolbarOptions
-
-| Prop                | Type                                                       | Description                                                                                                |
-| ------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **`adaptive`**      | <code>boolean</code>                                       | Use UINavigationController-managed bars so UIKit adapts them to iPhone Duo.                                |
-| **`imageBasePath`** | <code>string</code>                                        |                                                                                                            |
-| **`position`**      | <code>{ top: number; left: number; right: number; }</code> | Non-adaptive top-toolbar offsets from the WebView edges, in UIKit points. Used for centered modal headers. |
-
-
 ### Type Aliases
+
+
+#### Record
+
+Construct a type with a set of properties K of type T
+
+<code>{ [P in K]: T; }</code>
+
+
+#### Omit
+
+Construct a type with the properties of T except for those in type K.
+
+<code><a href="#pick">Pick</a>&lt;T, <a href="#exclude">Exclude</a>&lt;keyof T, K&gt;&gt;</code>
+
+
+#### Pick
+
+From T, pick a set of properties whose keys are in the union K
+
+<code>{ [P in K]: T[P]; }</code>
+
+
+#### Exclude
+
+<a href="#exclude">Exclude</a> from T those types that are assignable to U
+
+<code>T extends U ? never : T</code>
 
 
 #### ListenerCallback
