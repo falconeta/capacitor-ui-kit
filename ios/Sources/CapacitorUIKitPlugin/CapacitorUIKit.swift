@@ -1,3 +1,4 @@
+import UIKit
 import Foundation
 import Capacitor
 
@@ -25,13 +26,22 @@ import Capacitor
       let image = item["image"] as? String ?? ""
       let imageSelected = item["imageSelected"] as? String ?? ""
       
-      let tab = UITab(title: title, image: getImage(named: image, imageBasePath: imageBasePath), identifier: String(tag)) { tab in
-        UINavigationController(
-          rootViewController: UIViewController()
-        )
+      let normalImage = getImage(named: image, imageBasePath: imageBasePath)?.withRenderingMode(.alwaysTemplate)
+      let selectedImage = getImage(named: imageSelected, imageBasePath: imageBasePath)?.withRenderingMode(.alwaysTemplate) ?? normalImage
+      let tab = UITab(title: title, image: normalImage, identifier: String(tag)) { tab in
+        let content = UIViewController()
+        content.view.backgroundColor = .clear
+        let navigation = UINavigationController(rootViewController: content)
+        navigation.view.backgroundColor = .clear
+        navigation.setNavigationBarHidden(true, animated: false)
+        return navigation
       }
       
-      tab.viewController?.tabBarItem.selectedImage = getImage(named: imageSelected, imageBasePath: imageBasePath)
+      if #available(iOS 26.1, *) {
+        tab.selectedImage = selectedImage
+      } else {
+        tab.viewController?.tabBarItem.selectedImage = selectedImage
+      }
       
       uiItems.append(tab)
       
@@ -39,6 +49,10 @@ import Capacitor
     try capUIView?.createTabBar(uiItems, options: options, searchBarItem: searchBarItem)
   }
   
+  func publishTabBarLayout() {
+    capUIView?.publishTabBarLayout()
+  }
+
   public func removeTabs() {
     capUIView?.removeTabs()
   }
@@ -54,6 +68,24 @@ import Capacitor
     try capUIView?.createToolbar(items, options: options)
   }
   
+  func afterTopToolbarTransition(_ operation: @escaping () -> Void) {
+    guard let capUIView else { operation(); return }
+    capUIView.afterTopToolbarTransition(operation)
+  }
+  public func beginTopToolbarTransition(_ id: Int, source: JSObject, target: JSObject, backwards: Bool, duration: TimeInterval) throws -> TimeInterval {
+    return try capUIView?.beginTopToolbarTransition(id, source: source, target: target, backwards: backwards, duration: duration) ?? duration
+  }
+  public func topToolbarTopInset() -> Double {
+    Double(capUIView?.topToolbarTopInset() ?? 0)
+  }
+  public func updateTopToolbarTransition(_ id: Int, progress: CGFloat) {
+    capUIView?.updateTopToolbarTransition(id, progress: progress)
+  }
+  public func finishTopToolbarTransition(_ id: Int, completed: Bool, resolved: @escaping () -> Void) {
+    guard let capUIView else { resolved(); return }
+    capUIView.finishTopToolbarTransition(id, completed: completed, resolved: resolved)
+  }
+
   public func createTopToolbar(_ items: JSArray, options: JSObject) throws {
     try capUIView?.createTopToolbar(items, options: options)
   }
@@ -62,6 +94,10 @@ import Capacitor
     try capUIView?.setToolbarItems(items, options: options)
   }
   
+  func toolbarItem(tag: Int) -> UIBarButtonItem? {
+    capUIView?.toolbarItem(tag: tag)
+  }
+
   public func setTopToolbarItems(_ items: JSArray, options: JSObject) throws {
     try capUIView?.setTopToolbarItems(items, options: options)
   }
